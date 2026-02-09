@@ -40,14 +40,14 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
           </h1>
           <p className="text-sm text-muted-foreground">Here's your spending story today</p>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg shadow-lg">
           {user.avatar}
         </div>
       </motion.div>
 
       {/* Today's Spend */}
       <motion.div variants={fadeUp}>
-        <Card className="overflow-hidden border-0 shadow-lg">
+        <Card className="overflow-hidden border-0 glow-card">
           <div className="gradient-spend p-6">
             <p className="text-sm font-medium text-muted-foreground">Today's Spending</p>
             <p className="mt-1 font-display text-4xl font-bold text-foreground animate-count-up">
@@ -57,7 +57,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
               {categorySnapshot.map((cat) => (
                 <div
                   key={cat.label}
-                  className="flex items-center gap-1.5 rounded-full bg-card/70 px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
+                  className="flex items-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
                 >
                   <span>{cat.emoji}</span>
                   <span className="text-muted-foreground">{cat.label}</span>
@@ -71,14 +71,14 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
 
       {/* Smart Alert */}
       <motion.div variants={fadeUp}>
-        <Card className="border-warning/20 bg-warning/5">
+        <Card className="border-warning/15 bg-warning/5">
           <CardContent className="p-4">
             <div className="flex items-start gap-3">
               <span className="text-xl">⚠️</span>
               <div className="flex-1">
                 <p className="text-sm font-medium text-foreground">{smartAlert.message}</p>
                 <div className="mt-2">
-                  <Progress value={smartAlert.progress} className="h-2 bg-warning/20" />
+                  <Progress value={smartAlert.progress} className="h-2 bg-warning/15" />
                 </div>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {smartAlert.progress}% of weekly {smartAlert.category.toLowerCase()} budget used
@@ -91,14 +91,14 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
 
       {/* Quick Actions */}
       <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3">
-      {[
+        {[
           { icon: QrCode, label: "Scan", action: () => onNavigate("pay") },
           { icon: ArrowUpRight, label: "Request", action: () => {} },
         ].map((item) => (
           <button
             key={item.label}
             onClick={item.action}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-card p-4 shadow-sm transition-all active:scale-95 hover:shadow-md"
+            className="flex flex-col items-center gap-2 rounded-2xl bg-card p-4 glow-card transition-all active:scale-95 hover:bg-secondary"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-primary-foreground">
               <item.icon className="h-5 w-5" />
@@ -114,7 +114,7 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
           <h2 className="font-display text-lg font-semibold text-foreground">Recent Transactions</h2>
           <button className="text-xs font-medium text-primary">See all</button>
         </div>
-        <Card>
+        <Card className="glow-card">
           <CardContent className="divide-y divide-border p-0">
             {recentTransactions.map((tx) => (
               <div key={tx.id} className="flex items-center gap-3 px-4 py-3">

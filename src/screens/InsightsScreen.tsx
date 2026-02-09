@@ -65,11 +65,19 @@ export function InsightsScreen() {
         ) : (
           <motion.div key={period} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
             {/* Donut Chart */}
-            <Card className="border-0 shadow-lg glow-primary">
+            <Card className="border-0 glow-blue">
               <CardContent className="p-4">
                 <div className="relative mx-auto h-48 w-48">
                   <ResponsiveContainer>
                     <PieChart>
+                      <defs>
+                        {data.categories.map((c, i) => (
+                          <linearGradient key={i} id={`pie-grad-${i}`} x1="0" y1="0" x2="1" y2="1">
+                            <stop offset="0%" stopColor={c.color} stopOpacity={1} />
+                            <stop offset="100%" stopColor={c.color} stopOpacity={0.6} />
+                          </linearGradient>
+                        ))}
+                      </defs>
                       <Pie
                         data={data.categories}
                         dataKey="amount"
@@ -78,8 +86,8 @@ export function InsightsScreen() {
                         paddingAngle={4}
                         strokeWidth={0}
                       >
-                        {data.categories.map((c, i) => (
-                          <Cell key={i} fill={c.color} />
+                        {data.categories.map((_, i) => (
+                          <Cell key={i} fill={`url(#pie-grad-${i})`} />
                         ))}
                       </Pie>
                     </PieChart>
@@ -137,24 +145,26 @@ export function InsightsScreen() {
             </div>
 
             {/* Spending Trend */}
-            <Card className="border-0 shadow-lg glow-primary">
+            <Card className="border-0 glow-purple">
               <CardContent className="p-4">
                 <h3 className="mb-3 font-display text-sm font-semibold text-foreground">Spending Trend</h3>
                 <ResponsiveContainer width="100%" height={140}>
                   <BarChart data={data.daily}>
                     <defs>
-                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(210 90% 60%)" />
-                        <stop offset="100%" stopColor="hsl(280 80% 55%)" />
+                      <linearGradient id="barGlow" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(217, 75%, 52%)" stopOpacity={1} />
+                        <stop offset="100%" stopColor="hsl(260, 60%, 52%)" stopOpacity={0.7} />
                       </linearGradient>
                     </defs>
-                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
+                    <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 46%)" }} />
                     <YAxis hide />
                     <Tooltip
-                      contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
+                      contentStyle={{ borderRadius: 12, border: "none", background: "hsl(225, 18%, 14%)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}
+                      labelStyle={{ color: "hsl(220, 20%, 88%)" }}
+                      itemStyle={{ color: "hsl(220, 20%, 88%)" }}
                       formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Spent"]}
                     />
-                    <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="url(#barGradient)" />
+                    <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="url(#barGlow)" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
