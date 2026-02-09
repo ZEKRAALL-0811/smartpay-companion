@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { articles, learnTopics } from "@/data/mockData";
+import { articleContent, learnContent } from "@/data/articleContent";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ArticleDetail } from "@/components/ArticleDetail";
 import { Bookmark, Clock, RefreshCw, ExternalLink } from "lucide-react";
 
 const filterOptions = ["All", "Markets", "Savings", "Crypto", "Tax Tips", "Investing", "Budgeting", "Personal Finance"];
@@ -28,12 +29,17 @@ interface NewsArticle {
   category?: string;
 }
 
+type DetailView =
+  | { type: "article"; id: number }
+  | { type: "learn"; id: number }
+  | null;
+
 export function HubScreen() {
   const { user } = useAuth();
   const [filter, setFilter] = useState("All");
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
+  const [detailView, setDetailView] = useState<DetailView>(null);
 
-  // Fetch live finance news from edge function
   const { data: liveNews, isLoading: newsLoading, refetch } = useQuery({
     queryKey: ["finance-news"],
     queryFn: async () => {
@@ -47,11 +53,10 @@ export function HubScreen() {
       const data = await resp.json();
       return (data.articles || []) as NewsArticle[];
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchInterval: 10 * 60 * 1000, // auto-refresh every 10 min
+    staleTime: 5 * 60 * 1000,
+    refetchInterval: 10 * 60 * 1000,
   });
 
-  // Fallback to static articles
   const staticFiltered = filter === "All" ? articles : articles.filter((a) => a.category === filter);
   const featured = articles.find((a) => a.featured);
 
@@ -62,6 +67,48 @@ export function HubScreen() {
       return next;
     });
   };
+
+  // Detail view rendering
+  if (detailView) {
+    if (detailView.type === "article") {
+      const article = articles.find((a) => a.id === detailView.id);
+      const content = articleContent[detailView.id];
+      if (article && content) {
+        return (
+          <AnimatePresence mode="wait">
+            <ArticleDetail
+              key={`article-${detailView.id}`}
+              title={article.title}
+              emoji={article.image}
+              category={article.category}
+              readTime={article.readTime}
+              sections={content.sections}
+              onBack={() => setDetailView(null)}
+            />
+          </AnimatePresence>
+        );
+      }
+    }
+    if (detailView.type === "learn") {
+      const topic = learnTopics.find((t) => t.id === detailView.id);
+      const content = learnContent[detailView.id];
+      if (topic && content) {
+        return (
+          <AnimatePresence mode="wait">
+            <ArticleDetail
+              key={`learn-${detailView.id}`}
+              title={topic.title}
+              emoji={topic.emoji}
+              category="Learn"
+              readTime="5 min"
+              sections={content.sections}
+              onBack={() => setDetailView(null)}
+            />
+          </AnimatePresence>
+        );
+      }
+    }
+  }
 
   return (
     <motion.div className="space-y-5 px-4 pb-24 pt-6" variants={stagger} initial="hidden" animate="show">
@@ -108,7 +155,7 @@ export function HubScreen() {
         </motion.div>
       )}
 
-      {/* Filters for static articles */}
+      {/* Filters */}
       <motion.div variants={fadeUp} className="flex gap-2 overflow-x-auto pb-1 scrollbar-themed">
         {filterOptions.map((f) => (
           <button
@@ -126,7 +173,10 @@ export function HubScreen() {
       {/* Featured */}
       {filter === "All" && featured && (
         <motion.div variants={fadeUp}>
-          <Card className="overflow-hidden border-0 shadow-lg">
+          <Card
+            className="overflow-hidden border-0 shadow-lg cursor-pointer active:scale-[0.98] transition-transform"
+            onClick={() => setDetailView({ type: "article", id: featured.id })}
+          >
             <div className="gradient-primary p-6">
               <span className="text-4xl">{featured.image}</span>
               <h2 className="mt-3 font-display text-lg font-bold text-primary-foreground">{featured.title}</h2>
@@ -143,7 +193,11 @@ export function HubScreen() {
       {/* Static Articles */}
       <motion.div variants={fadeUp} className="space-y-3">
         {staticFiltered.filter((a) => !a.featured).map((article) => (
-          <Card key={article.id} className="transition-all hover:shadow-md">
+          <Card
+            key={article.id}
+            className="transition-all hover:shadow-md cursor-pointer active:scale-[0.98]"
+            onClick={() => setDetailView({ type: "article", id: article.id })}
+          >
             <CardContent className="flex items-start gap-3 p-4">
               <span className="text-3xl shrink-0">{article.image}</span>
               <div className="flex-1">
@@ -154,7 +208,10 @@ export function HubScreen() {
                   <span className="text-muted-foreground">{article.readTime}</span>
                 </div>
               </div>
-              <button onClick={() => toggleBookmark(article.id)} className="shrink-0 p-1">
+              <button
+                onClick={(e) => { e.stopPropagation(); toggleBookmark(article.id); }}
+                className="shrink-0 p-1"
+              >
                 <Bookmark className={`h-5 w-5 transition-colors ${bookmarks.has(article.id) ? "fill-primary text-primary" : "text-muted-foreground"}`} />
               </button>
             </CardContent>
@@ -167,7 +224,11 @@ export function HubScreen() {
         <h2 className="mb-3 font-display text-lg font-semibold text-foreground">📚 Learn</h2>
         <div className="space-y-3">
           {learnTopics.map((topic) => (
-            <Card key={topic.id} className="border-0 shadow-sm transition-all hover:shadow-md">
+            <Card
+              key={topic.id}
+              className="border-0 shadow-sm transition-all hover:shadow-md cursor-pointer active:scale-[0.98]"
+              onClick={() => setDetailView({ type: "learn", id: topic.id })}
+            >
               <CardContent className="flex items-start gap-3 p-4">
                 <span className="text-2xl shrink-0">{topic.emoji}</span>
                 <div className="flex-1">
