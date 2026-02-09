@@ -165,7 +165,7 @@ export function InsightsScreen() {
                       cursor={{ fill: "hsl(145, 65%, 46%, 0.08)" }}
                       formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Spent"]}
                     />
-                    <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="url(#barGlow)" />
+                    <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="url(#barGlow)" className="cursor-pointer [&>path]:transition-all [&>path]:duration-200 [&>path:hover]:filter [&>path:hover]:drop-shadow-[0_0_8px_hsl(145,65%,46%,0.6)]" activeBar={{ fill: "url(#barGlow)", filter: "drop-shadow(0 0 10px hsl(145, 65%, 46%, 0.7))" }} />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>
