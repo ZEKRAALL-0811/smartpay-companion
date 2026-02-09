@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from "recharts";
+import { EmojiIcon } from "@/components/CategoryIcon";
 
 const periods = ["today", "week", "month"] as const;
 const periodLabels = { today: "Today", week: "This Week", month: "This Month" };
@@ -41,7 +43,10 @@ export function InsightsScreen() {
 
   return (
     <div className="space-y-5 px-4 pb-24 pt-6">
-      <h1 className="font-display text-2xl font-bold text-foreground">Insights 📊</h1>
+      <div className="flex items-center gap-2">
+        <CategoryIcon name="insights" size={24} />
+        <h1 className="font-display text-2xl font-bold text-foreground">Insights</h1>
+      </div>
 
       <div className="relative flex rounded-2xl bg-secondary p-1">
         {periods.map((p) => (
@@ -127,7 +132,7 @@ export function InsightsScreen() {
                       <Card key={b.category}>
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between text-sm">
-                            <span>{b.emoji} {b.category}</span>
+                            <span className="flex items-center gap-1.5"><EmojiIcon emoji={b.emoji} size={16} /> {b.category}</span>
                             <span className="text-muted-foreground">₹{b.spent.toLocaleString("en-IN")} / ₹{b.limit.toLocaleString("en-IN")}</span>
                           </div>
                           <Progress value={Math.min(pct, 100)} className={`mt-2 h-2 ${status === "destructive" ? "bg-destructive/20" : status === "warning" ? "bg-warning/20" : "bg-success/20"}`} />

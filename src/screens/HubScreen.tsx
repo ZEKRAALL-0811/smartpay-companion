@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
+import { CategoryIcon } from "@/components/CategoryIcon";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -7,6 +8,7 @@ import { articles, learnTopics } from "@/data/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Bookmark, Clock, RefreshCw, ExternalLink } from "lucide-react";
+import { EmojiIcon } from "@/components/CategoryIcon";
 
 const filterOptions = ["All", "Markets", "Savings", "Crypto", "Tax Tips", "Investing", "Budgeting", "Personal Finance"];
 
@@ -66,7 +68,10 @@ export function HubScreen() {
   return (
     <motion.div className="space-y-5 px-4 pb-24 pt-6" variants={stagger} initial="hidden" animate="show">
       <motion.div variants={fadeUp} className="flex items-center justify-between">
-        <h1 className="font-display text-2xl font-bold text-foreground">Finance Hub 📰</h1>
+        <div className="flex items-center gap-2">
+          <CategoryIcon name="news" size={24} />
+          <h1 className="font-display text-2xl font-bold text-foreground">Finance Hub</h1>
+        </div>
         <button onClick={() => refetch()} className="flex items-center gap-1 text-xs text-primary font-medium">
           <RefreshCw className={`h-3 w-3 ${newsLoading ? "animate-spin" : ""}`} />
           Refresh
@@ -76,7 +81,7 @@ export function HubScreen() {
       {/* Live Finance News */}
       {liveNews && liveNews.length > 0 && (
         <motion.div variants={fadeUp}>
-          <h2 className="mb-3 font-display text-lg font-semibold text-foreground">📡 Live Finance News</h2>
+          <h2 className="mb-3 font-display text-lg font-semibold text-foreground flex items-center gap-2"><CategoryIcon name="satellite" size={20} /> Live Finance News</h2>
           <div className="space-y-3">
             {liveNews.slice(0, 8).map((article, i) => (
               <Card key={i} className="transition-all hover:shadow-md">
@@ -128,7 +133,7 @@ export function HubScreen() {
         <motion.div variants={fadeUp}>
           <Card className="overflow-hidden border-0 shadow-lg">
             <div className="gradient-primary p-6">
-              <span className="text-4xl">{featured.image}</span>
+              <EmojiIcon emoji={featured.image} size={40} />
               <h2 className="mt-3 font-display text-lg font-bold text-primary-foreground">{featured.title}</h2>
               <div className="mt-2 flex items-center gap-3 text-xs text-primary-foreground/70">
                 <span>{featured.category}</span>
@@ -145,7 +150,7 @@ export function HubScreen() {
         {staticFiltered.filter((a) => !a.featured).map((article) => (
           <Card key={article.id} className="transition-all hover:shadow-md">
             <CardContent className="flex items-start gap-3 p-4">
-              <span className="text-3xl shrink-0">{article.image}</span>
+              <EmojiIcon emoji={article.image} size={28} />
               <div className="flex-1">
                 <p className="text-sm font-semibold text-foreground leading-tight">{article.title}</p>
                 <div className="mt-1.5 flex items-center gap-2 text-xs">
@@ -164,12 +169,12 @@ export function HubScreen() {
 
       {/* Learn Section */}
       <motion.div variants={fadeUp}>
-        <h2 className="mb-3 font-display text-lg font-semibold text-foreground">📚 Learn</h2>
+        <h2 className="mb-3 font-display text-lg font-semibold text-foreground flex items-center gap-2"><CategoryIcon name="learn" size={20} /> Learn</h2>
         <div className="space-y-3">
           {learnTopics.map((topic) => (
             <Card key={topic.id} className="border-0 shadow-sm transition-all hover:shadow-md">
               <CardContent className="flex items-start gap-3 p-4">
-                <span className="text-2xl shrink-0">{topic.emoji}</span>
+                <EmojiIcon emoji={topic.emoji} size={24} />
                 <div className="flex-1">
                   <p className="text-sm font-semibold text-foreground">{topic.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{topic.subtitle}</p>
