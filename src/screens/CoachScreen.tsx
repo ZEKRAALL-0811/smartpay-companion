@@ -124,12 +124,12 @@ export function CoachScreen() {
       </div>
 
       {/* Quick Prompts */}
-      <div className="flex gap-2 overflow-x-auto px-4 py-3">
+      <div className="flex flex-wrap gap-2 px-4 py-3">
         {quickPrompts.map((p) => (
           <button
             key={p}
             onClick={() => sendMessage(p)}
-            className="whitespace-nowrap rounded-full bg-accent px-4 py-2 text-xs font-medium text-accent-foreground transition-all active:scale-95 hover:bg-accent/80"
+            className="rounded-full bg-accent px-4 py-2 text-xs font-medium text-accent-foreground transition-all active:scale-95 hover:bg-accent/80"
           >
             {p}
           </button>
