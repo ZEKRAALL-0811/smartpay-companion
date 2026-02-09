@@ -1,86 +1,104 @@
 
 
-# SmartPay Tracker — Implementation Plan
+# SmartPay Full Backend Implementation
 
 ## Overview
-A mobile-first financial management app with 5 main tabs, focused on storytelling over raw numbers, with a friendly and engaging UI. All data will be mock/static (no backend needed).
+Enable Lovable Cloud and build a complete backend for the SmartPay finance app, covering authentication, database, and an AI-powered coach — all wired into the existing frontend screens.
 
 ---
 
-## Design System
-- **Color palette**: Soft gradients — primary indigo/purple accent, green for safe, amber for warning, red for over-budget
-- **Typography**: Clean sans-serif, large friendly headings, smaller muted subtexts
-- **Cards**: Rounded corners with subtle shadows, light background tints per category
-- **Emojis & icons**: Used throughout to soften the financial tone
-- **Animations**: Fade-in on mount, animated counters, smooth tab transitions, confetti on payment success
+## Phase 1: Enable Lovable Cloud
+Set up the managed Supabase backend (database, auth, edge functions) with zero external accounts.
 
 ---
 
-## Screen 1: Home Dashboard 🏠
-The hero screen — first impression matters most.
+## Phase 2: Authentication (Sign Up / Login / Logout)
 
-- **Greeting header**: "Good morning, Zaheer ☀️" with avatar
-- **Today's spend card**: Large animated counter (₹0 → ₹840) with a subtle gradient background
-- **Mini spend snapshot**: 3 category pills (🍔 Food, 🚗 Travel, 🛍️ Shopping) with small amounts
-- **Smart alert card**: Contextual nudge — "You're close to your food budget this week" with a progress bar
-- **Recent transactions list**: 3-4 items with icons, merchant name, amount, and time
-- **Quick actions row**: Pay, Scan, Request buttons
+### What changes
+- **New pages**: `AuthPage.tsx` with email/password login and signup forms
+- **Auth context**: A React context (`AuthProvider`) wrapping the app to manage session state via `onAuthStateChange`
+- **Route protection**: Redirect unauthenticated users to the auth page; authenticated users go to the main app
+- **Profile screen**: The "Log Out" button will call `supabase.auth.signOut()`
+- **Redirect URL**: Sign-up will use `emailRedirectTo: window.location.origin`
 
-## Screen 2: Pay Screen 💸
-Familiar payment flow with satisfying feedback.
-
-- **QR scan placeholder**: Camera-style frame with "Scan to Pay" overlay
-- **Pay to contact**: Search bar + recent contacts as circular avatars
-- **Amount input**: Large number pad style input with currency symbol
-- **Category selector**: Horizontal scrollable chips (Food, Travel, Shopping, Bills, etc.)
-- **Pay button**: Large, prominent with ripple effect
-- **Success state**: Full-screen checkmark animation with confetti, amount, and recipient shown
-- **Receipt view**: Clean card with transaction details and a "Done" button
-
-## Screen 3: Insights 📊
-Visual-first spending analysis.
-
-- **Time filter tabs**: Today / This Week / This Month with smooth underline indicator
-- **Donut chart**: Category breakdown with color coding and center total
-- **Category breakdown list**: Each row shows icon, name, amount, percentage, and trend arrow (↑18%)
-- **Budget progress bars**: Per-category bars color-coded (green/yellow/red)
-- **Spending trend**: Simple line/bar chart showing daily spend for the selected period
-- **Skeleton loaders**: Shown briefly on tab switch for premium feel
-
-## Screen 4: AI Coach 🤖
-The "wow factor" — feels interactive and alive.
-
-- **Chat-style interface**: Message bubbles from the AI coach with typing indicator animation
-- **Personalized tips**: "You spent 18% more on food this week. Try cooking at home twice more!" with emoji
-- **Quick prompt chips**: "How am I doing?", "Save more tips", "Weekly summary"
-- **Animated coach avatar**: Subtle floating/breathing animation
-- **Insight cards inline**: Mini charts or stats embedded within chat messages
-- **Input field**: Users can type questions (responses are pre-scripted mock data)
-
-## Screen 5: Finance Hub 📰
-Educational content and financial news.
-
-- **Featured article card**: Large hero card with image placeholder, title, and read time
-- **News feed**: Scrollable list of financial news cards with thumbnails
-- **Learn section**: Horizontal carousel of educational topic cards ("Budgeting 101", "Investing Basics")
-- **Category filter chips**: All, Savings, Investing, Budgeting, News
-- **Bookmark icon**: On each card for saving articles
+### Database
+- **profiles table**: `id (uuid, FK to auth.users)`, `name (text)`, `email (text)`, `avatar_url (text)`, `created_at`
+- **Trigger**: Auto-create a profile row on user signup
+- **RLS**: Users can only read/update their own profile
 
 ---
 
-## Bottom Navigation
-- 5 tabs: Home, Pay, Insights, Coach, Hub
-- Active tab highlighted with filled icon + label
-- Subtle scale animation on tap
-- Fixed at bottom, always visible
+## Phase 3: Database Tables
 
-## Micro-interactions & Polish
-- Animated number counters on dashboard
-- Card fade-in with staggered delays
-- Smooth page transitions between tabs
-- Skeleton loading states
-- Confetti animation on payment success
-- Typing indicator dots for AI Coach
-- Progress bar animations
-- Hover/press states on all interactive elements
+### Tables to create
+
+| Table | Key Columns | Purpose |
+|-------|------------|---------|
+| `profiles` | id, name, email, avatar_url | User profile data |
+| `transactions` | id, user_id, merchant, amount, category, icon, time, created_at | Spending history |
+| `budgets` | id, user_id, category, emoji, spent, budget_limit, period | Budget tracking |
+| `contacts` | id, user_id, name, avatar, color | Pay contacts |
+
+### Security
+- All tables have RLS enabled
+- All policies scope data to `auth.uid() = user_id`
+- Seed data inserted for new users via a database trigger or on first login
+
+### Frontend changes
+- Replace all mock data imports with Supabase queries using TanStack Query (`useQuery` / `useMutation`)
+- HomeScreen, PayScreen, InsightsScreen, ProfileScreen will fetch real data
+- PayScreen will insert a transaction record on successful payment
+
+---
+
+## Phase 4: AI-Powered Coach (Lovable AI)
+
+### Edge function: `supabase/functions/chat/index.ts`
+- Accepts conversation messages from the client
+- Prepends a system prompt tailored to a financial coaching assistant
+- Calls the Lovable AI Gateway (`google/gemini-3-flash-preview`) with streaming enabled
+- Handles 429 (rate limit) and 402 (payment required) errors gracefully
+- Returns SSE stream to the client
+
+### Frontend changes (CoachScreen)
+- Remove mock `coachResponses` — replace with real AI streaming
+- Send full conversation history to the edge function
+- Render assistant tokens as they arrive (token-by-token streaming)
+- Quick prompts still work but send real messages to the AI
+- Show toast on rate limit or payment errors
+
+---
+
+## Phase 5: Insights (Computed from Real Data)
+
+### Edge function: `supabase/functions/insights/index.ts`
+- Accepts a `period` parameter (today / week / month)
+- Queries the `transactions` table, aggregates by category and day/week
+- Returns the same shape as the current `insightData` mock object
+- Budget progress is computed from `budgets` table
+
+### Frontend changes
+- InsightsScreen fetches from the insights edge function instead of using mock data
+
+---
+
+## Summary of Files Created / Modified
+
+### New files
+- `src/pages/AuthPage.tsx` — Login / Signup UI
+- `src/contexts/AuthContext.tsx` — Session management
+- `src/integrations/supabase/client.ts` — Supabase client (auto-generated by Lovable Cloud)
+- `supabase/functions/chat/index.ts` — AI coach edge function
+- `supabase/functions/insights/index.ts` — Insights aggregation edge function
+- Database migrations for profiles, transactions, budgets, contacts tables + RLS + triggers
+
+### Modified files
+- `src/App.tsx` — Add AuthProvider, protected routes
+- `src/pages/Index.tsx` — Use auth context for user data
+- `src/screens/HomeScreen.tsx` — Fetch real transactions and spending
+- `src/screens/PayScreen.tsx` — Insert transactions, fetch contacts
+- `src/screens/InsightsScreen.tsx` — Fetch aggregated data
+- `src/screens/CoachScreen.tsx` — Real AI streaming
+- `src/screens/ProfileScreen.tsx` — Real profile data, working logout
+- `src/screens/HubScreen.tsx` — (Articles remain static for now, no backend needed)
 
