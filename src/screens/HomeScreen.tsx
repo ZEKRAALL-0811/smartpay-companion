@@ -22,7 +22,7 @@ function getGreeting() {
   return "Good evening";
 }
 
-export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void }) {
+export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: TabId) => void; onOpenProfile?: () => void }) {
   const animatedSpend = useAnimatedCounter(todaySpend);
 
   return (
@@ -40,9 +40,12 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
           </h1>
           <p className="text-sm text-muted-foreground">Here's your spending story today</p>
         </div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg shadow-lg">
+        <button
+          onClick={onOpenProfile}
+          className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg shadow-lg transition-all active:scale-95 hover:glow-blue"
+        >
           {user.avatar}
-        </div>
+        </button>
       </motion.div>
 
       {/* Today's Spend */}
