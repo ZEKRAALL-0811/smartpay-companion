@@ -152,8 +152,8 @@ export function InsightsScreen() {
                   <BarChart data={data.daily}>
                     <defs>
                       <linearGradient id="barGlow" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="hsl(217, 75%, 52%)" stopOpacity={1} />
-                        <stop offset="100%" stopColor="hsl(260, 60%, 52%)" stopOpacity={0.7} />
+                        <stop offset="0%" stopColor="hsl(145, 65%, 46%)" stopOpacity={0.9} />
+                        <stop offset="100%" stopColor="hsl(145, 65%, 46%)" stopOpacity={0.4} />
                       </linearGradient>
                     </defs>
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 46%)" }} />
