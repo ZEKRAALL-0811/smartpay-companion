@@ -7,6 +7,10 @@ import { InsightsScreen } from "@/screens/InsightsScreen";
 import { CoachScreen } from "@/screens/CoachScreen";
 import { HubScreen } from "@/screens/HubScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
+import { UpiSetupScreen } from "@/screens/UpiSetupScreen";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 
 const screens: Record<TabId, React.ComponentType<{ onNavigate: (tab: TabId) => void }>> = {
   home: HomeScreen,
@@ -17,8 +21,44 @@ const screens: Record<TabId, React.ComponentType<{ onNavigate: (tab: TabId) => v
 };
 
 const Index = () => {
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [showProfile, setShowProfile] = useState(false);
+  const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
+
+  // Check if UPI setup is complete
+  const { data: bankAccount, isLoading } = useQuery({
+    queryKey: ["bank-account", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase
+        .from("bank_accounts")
+        .select("is_setup_complete")
+        .eq("user_id", user!.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const isSetupDone = bankAccount?.is_setup_complete === true;
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Show UPI setup if not complete
+  if (!isSetupDone && setupComplete !== true) {
+    return (
+      <div className="mx-auto min-h-screen max-w-md bg-background">
+        <UpiSetupScreen onComplete={() => setSetupComplete(true)} />
+      </div>
+    );
+  }
+
   const Screen = screens[activeTab];
 
   if (showProfile) {

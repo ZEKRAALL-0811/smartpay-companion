@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { categories } from "@/data/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,9 +11,21 @@ import { QrCode, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
 import { QrScanner } from "@/components/QrScanner";
+import { UpiPinDialog } from "@/components/UpiPinDialog";
 import { useNativeContacts } from "@/hooks/useNativeContacts";
 
-type PayState = "form" | "success";
+type PayState = "form" | "pin" | "success";
+
+const paymentCategories = [
+  { emoji: "🍔", label: "Food" },
+  { emoji: "👕", label: "Clothing" },
+  { emoji: "⌚", label: "Accessories" },
+  { emoji: "🚗", label: "Travel" },
+  { emoji: "📱", label: "Bills" },
+  { emoji: "🛍️", label: "Shopping" },
+  { emoji: "🎬", label: "Entertainment" },
+  { emoji: "💊", label: "Health" },
+];
 
 export function PayScreen() {
   const { user } = useAuth();
@@ -24,11 +35,11 @@ export function PayScreen() {
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
+  const [pinOpen, setPinOpen] = useState(false);
   const { syncContacts, syncing } = useNativeContacts();
 
   const handleQrScan = useCallback((data: string) => {
     toast.success("QR scanned: " + data);
-    // You can parse UPI or payment data from the QR string here
   }, []);
 
   const { data: contacts, isLoading } = useQuery({
@@ -42,24 +53,51 @@ export function PayScreen() {
 
   const contact = contacts?.find((c) => c.id === selectedContact);
 
-  const handlePay = async () => {
+  const handlePayClick = () => {
+    if (!amount || !selectedContact || !selectedCategory) return;
+    setPinOpen(true);
+  };
+
+  const handlePinVerified = async () => {
+    setPinOpen(false);
     if (!amount || !selectedContact || !contact || !user) return;
 
-    const emojiMap: Record<string, string> = { Food: "🍕", Travel: "🚕", Shopping: "🛒", Bills: "📱", Entertainment: "🎬", Health: "💊" };
+    const emojiMap: Record<string, string> = { Food: "🍕", Travel: "🚕", Shopping: "🛒", Bills: "📱", Entertainment: "🎬", Health: "💊", Clothing: "👕", Accessories: "⌚" };
     const cat = selectedCategory || "General";
+    const payAmount = parseInt(amount);
 
-    const { error } = await supabase.from("transactions").insert({
+    // Deduct from virtual balance
+    const { data: account } = await supabase
+      .from("bank_accounts")
+      .select("account_balance")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (account && account.account_balance < payAmount) {
+      toast.error("Insufficient balance!");
+      return;
+    }
+
+    const { error: txError } = await supabase.from("transactions").insert({
       user_id: user.id,
       merchant: `Payment to ${contact.name}`,
-      amount: -parseInt(amount),
+      amount: -payAmount,
       category: cat,
       icon: emojiMap[cat] || "💸",
       time: "Just now",
     });
 
-    if (error) {
-      toast.error("Payment failed: " + error.message);
+    if (txError) {
+      toast.error("Payment failed: " + txError.message);
       return;
+    }
+
+    // Update balance
+    if (account) {
+      await supabase
+        .from("bank_accounts")
+        .update({ account_balance: account.account_balance - payAmount })
+        .eq("user_id", user.id);
     }
 
     queryClient.invalidateQueries({ queryKey: ["recent-transactions"] });
@@ -73,6 +111,8 @@ export function PayScreen() {
     setSelectedContact(null);
     setSelectedCategory(null);
   };
+
+  const canPay = !!amount && !!selectedContact && !!selectedCategory;
 
   return (
     <div className="px-4 pb-24 pt-6">
@@ -130,24 +170,42 @@ export function PayScreen() {
               </div>
             </div>
 
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-themed">
-              {categories.map((cat) => (
-                <button
-                  key={cat.label}
-                  onClick={() => setSelectedCategory(cat.label)}
-                  className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${
-                    selectedCategory === cat.label ? "gradient-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  <span>{cat.emoji}</span>
-                  {cat.label}
-                </button>
-              ))}
+            {/* Mandatory category selection */}
+            <div>
+              <p className="mb-2 text-sm font-medium text-foreground">
+                Select Category <span className="text-destructive">*</span>
+              </p>
+              <div className="flex gap-2 flex-wrap">
+                {paymentCategories.map((cat) => (
+                  <button
+                    key={cat.label}
+                    onClick={() => setSelectedCategory(cat.label)}
+                    className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-all whitespace-nowrap ${
+                      selectedCategory === cat.label ? "gradient-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                    }`}
+                  >
+                    <span>{cat.emoji}</span>
+                    {cat.label}
+                  </button>
+                ))}
+              </div>
+              {!selectedCategory && amount && selectedContact && (
+                <p className="mt-2 text-xs text-destructive">Please select a category to enable payment</p>
+              )}
             </div>
 
-            <Button onClick={handlePay} disabled={!amount || !selectedContact} className="h-14 w-full rounded-2xl gradient-primary text-lg font-display font-bold shadow-lg transition-all active:scale-95 disabled:opacity-40">
-              Pay {amount ? `₹${parseInt(amount).toLocaleString("en-IN")}` : ""}
+            <Button
+              onClick={handlePayClick}
+              disabled={!canPay}
+              className="h-14 w-full rounded-2xl gradient-primary text-lg font-display font-bold shadow-lg transition-all active:scale-95 disabled:opacity-40"
+            >
+              🔒 Pay {amount ? `₹${parseInt(amount).toLocaleString("en-IN")}` : ""}
             </Button>
+            {!canPay && (
+              <p className="text-center text-xs text-muted-foreground">
+                {!selectedContact ? "Select a contact" : !selectedCategory ? "Select a category" : "Enter amount"} to continue
+              </p>
+            )}
           </motion.div>
         ) : (
           <motion.div key="success" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[70vh] flex-col items-center justify-center gap-6">
@@ -164,13 +222,21 @@ export function PayScreen() {
                 <div className="flex justify-between"><span className="text-muted-foreground">To</span><span className="font-medium text-foreground">{contact?.name}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Category</span><span className="font-medium text-foreground">{selectedCategory || "General"}</span></div>
                 <div className="flex justify-between"><span className="text-muted-foreground">Time</span><span className="font-medium text-foreground">Just now</span></div>
-                <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span className="font-medium text-success">Completed ✅</span></div>
+                <div className="flex justify-between"><span className="text-muted-foreground">Status</span><span className="font-medium text-primary">Completed ✅</span></div>
               </CardContent>
             </Card>
             <Button onClick={handleDone} className="h-12 w-full max-w-xs rounded-2xl" variant="outline">Done</Button>
           </motion.div>
         )}
       </AnimatePresence>
+
+      <UpiPinDialog
+        open={pinOpen}
+        onClose={() => setPinOpen(false)}
+        onVerified={handlePinVerified}
+        title="Authorize Payment"
+        description={`Enter UPI PIN to pay ₹${amount ? parseInt(amount).toLocaleString("en-IN") : "0"}`}
+      />
     </div>
   );
 }

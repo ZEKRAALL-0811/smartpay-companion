@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      bank_accounts: {
+        Row: {
+          account_balance: number
+          card_expiry: string
+          card_number_last4: string
+          created_at: string
+          id: string
+          is_setup_complete: boolean
+          mobile_number: string
+          updated_at: string
+          upi_id: string | null
+          upi_pin_hash: string | null
+          user_id: string
+        }
+        Insert: {
+          account_balance?: number
+          card_expiry?: string
+          card_number_last4?: string
+          created_at?: string
+          id?: string
+          is_setup_complete?: boolean
+          mobile_number: string
+          updated_at?: string
+          upi_id?: string | null
+          upi_pin_hash?: string | null
+          user_id: string
+        }
+        Update: {
+          account_balance?: number
+          card_expiry?: string
+          card_number_last4?: string
+          created_at?: string
+          id?: string
+          is_setup_complete?: boolean
+          mobile_number?: string
+          updated_at?: string
+          upi_id?: string | null
+          upi_pin_hash?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       budgets: {
         Row: {
           budget_limit: number
@@ -71,6 +113,39 @@ export type Database = {
           id?: string
           name?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      money_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          note: string | null
+          requested_from: string
+          requester_id: string
+          requester_name: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          requested_from: string
+          requester_id: string
+          requester_name: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          note?: string | null
+          requested_from?: string
+          requester_id?: string
+          requester_name?: string
+          status?: string
         }
         Relationships: []
       }
