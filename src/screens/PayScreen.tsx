@@ -13,7 +13,6 @@ import confetti from "canvas-confetti";
 import { QrScanner } from "@/components/QrScanner";
 import { UpiPinDialog } from "@/components/UpiPinDialog";
 import { useNativeContacts } from "@/hooks/useNativeContacts";
-import { EmojiIcon, CategoryIcon } from "@/components/CategoryIcon";
 
 type PayState = "form" | "pin" | "success";
 
@@ -120,10 +119,7 @@ export function PayScreen() {
       <AnimatePresence mode="wait">
         {state === "form" ? (
           <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5">
-            <div className="flex items-center gap-2">
-              <CategoryIcon name="pay" size={24} />
-              <h1 className="font-display text-2xl font-bold text-foreground">Pay</h1>
-            </div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Pay 💸</h1>
 
             <Card className="border-dashed border-2 border-primary/20 bg-accent/30 cursor-pointer active:scale-95 transition-all" onClick={() => setScannerOpen(true)}>
               <CardContent className="flex flex-col items-center gap-2 p-8">
@@ -188,7 +184,7 @@ export function PayScreen() {
                       selectedCategory === cat.label ? "gradient-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
                     }`}
                   >
-                    <EmojiIcon emoji={cat.emoji} size={16} />
+                    <span>{cat.emoji}</span>
                     {cat.label}
                   </button>
                 ))}
