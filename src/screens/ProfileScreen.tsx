@@ -48,17 +48,13 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
           <p className="font-display text-xl font-bold text-foreground">{user.name}</p>
           <p className="text-sm text-muted-foreground">zaheer@smartpay.in</p>
         </div>
-        <span className="rounded-full bg-primary/10 px-4 py-1 text-xs font-semibold text-primary">
-          Premium Member ✨
-        </span>
       </motion.div>
 
       {/* Stats */}
-      <motion.div variants={fadeUp} className="grid grid-cols-3 gap-3">
+      <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3">
         {[
           { label: "Transactions", value: "284" },
           { label: "This Month", value: "₹18.2K" },
-          { label: "Saved", value: "₹4.1K" },
         ].map((stat) => (
           <Card key={stat.label} className="border-0 glow-card">
             <CardContent className="flex flex-col items-center p-3">
