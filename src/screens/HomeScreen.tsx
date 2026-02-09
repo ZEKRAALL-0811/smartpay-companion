@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { QrCode, ArrowUpRight, ArrowDownLeft, Wallet } from "lucide-react";
 import { RequestMoneyDialog } from "@/components/RequestMoneyDialog";
 import { CheckBalanceDialog } from "@/components/CheckBalanceDialog";
+import { EmojiIcon } from "@/components/CategoryIcon";
 import type { TabId } from "@/components/BottomNav";
 
 const stagger = {
@@ -100,7 +101,7 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
               <div className="mt-4 flex gap-3 flex-wrap">
                 {categorySnapshot.map((cat) => (
                   <div key={cat.label} className="flex items-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-medium backdrop-blur-sm">
-                    <span>{cat.emoji}</span>
+                    <EmojiIcon emoji={cat.emoji} size={14} />
                     <span className="text-muted-foreground">{cat.label}</span>
                     <span className="font-semibold text-foreground">₹{cat.amount}</span>
                   </div>
@@ -144,7 +145,7 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
               ) : transactions && transactions.length > 0 ? (
                 transactions.slice(0, 5).map((tx) => (
                   <div key={tx.id} className="flex items-center gap-3 px-4 py-3">
-                    <span className="text-xl">{tx.icon}</span>
+                    <EmojiIcon emoji={tx.icon} size={24} />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-foreground">{tx.merchant}</p>
                       <p className="text-xs text-muted-foreground">{tx.time} • {tx.category}</p>
