@@ -54,7 +54,7 @@ export function PayScreen() {
             {/* Contacts */}
             <div>
               <p className="mb-3 text-sm font-medium text-foreground">Pay to Contact</p>
-              <div className="flex gap-4 overflow-x-auto pb-2">
+              <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-themed">
                 {contacts.map((c) => (
                   <button
                     key={c.id}
@@ -91,7 +91,7 @@ export function PayScreen() {
             </div>
 
             {/* Categories */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-themed">
               {categories.map((cat) => (
                 <button
                   key={cat.label}

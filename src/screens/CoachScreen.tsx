@@ -75,7 +75,7 @@ export function CoachScreen() {
       </div>
 
       {/* Messages */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 space-y-3">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 space-y-3 scrollbar-themed">
         <AnimatePresence initial={false}>
           {messages.map((msg) => (
             <motion.div
