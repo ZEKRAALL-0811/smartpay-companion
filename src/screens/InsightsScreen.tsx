@@ -159,9 +159,10 @@ export function InsightsScreen() {
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(220 10% 46%)" }} />
                     <YAxis hide />
                     <Tooltip
-                      contentStyle={{ borderRadius: 12, border: "none", background: "hsl(225, 18%, 14%)", boxShadow: "0 4px 20px rgba(0,0,0,0.4)" }}
+                      contentStyle={{ borderRadius: 12, border: "none", background: "hsl(200, 12%, 10%)", boxShadow: "0 0 20px hsl(145, 65%, 46%, 0.2)" }}
                       labelStyle={{ color: "hsl(220, 20%, 88%)" }}
                       itemStyle={{ color: "hsl(220, 20%, 88%)" }}
+                      cursor={{ fill: "hsl(145, 65%, 46%, 0.08)" }}
                       formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Spent"]}
                     />
                     <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="url(#barGlow)" />

@@ -42,7 +42,7 @@ export function HubScreen() {
       </motion.h1>
 
       {/* Filters */}
-      <motion.div variants={fadeUp} className="flex gap-2 overflow-x-auto pb-1">
+      <motion.div variants={fadeUp} className="flex gap-2 overflow-x-auto pb-1 scrollbar-themed">
         {filterOptions.map((f) => (
           <button
             key={f}

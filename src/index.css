@@ -96,4 +96,19 @@
   .glow-card {
     box-shadow: 0 1px 3px hsl(0 0% 0% / 0.25), 0 0 15px hsl(145 65% 46% / 0.04);
   }
+
+  .scrollbar-themed::-webkit-scrollbar {
+    height: 6px;
+  }
+  .scrollbar-themed::-webkit-scrollbar-track {
+    background: hsl(200 10% 12%);
+    border-radius: 3px;
+  }
+  .scrollbar-themed::-webkit-scrollbar-thumb {
+    background: hsl(145 40% 30%);
+    border-radius: 3px;
+  }
+  .scrollbar-themed::-webkit-scrollbar-thumb:hover {
+    background: hsl(145 50% 38%);
+  }
 }
