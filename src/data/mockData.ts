@@ -45,9 +45,9 @@ export const insightData = {
   today: {
     total: 840,
     categories: [
-      { name: "Food", amount: 380, percent: 45, trend: 18, color: "hsl(38 92% 55%)" },
-      { name: "Travel", amount: 260, percent: 31, trend: -5, color: "hsl(210 90% 60%)" },
-      { name: "Shopping", amount: 200, percent: 24, trend: 12, color: "hsl(280 80% 60%)" },
+      { name: "Food", amount: 380, percent: 45, trend: 18, color: "hsl(42 80% 50%)" },
+      { name: "Travel", amount: 260, percent: 31, trend: -5, color: "hsl(145 65% 46%)" },
+      { name: "Shopping", amount: 200, percent: 24, trend: 12, color: "hsl(180 50% 42%)" },
     ],
     daily: [
       { day: "Mon", amount: 620 },
@@ -62,10 +62,10 @@ export const insightData = {
   week: {
     total: 4500,
     categories: [
-      { name: "Food", amount: 1800, percent: 40, trend: 18, color: "hsl(38 92% 55%)" },
-      { name: "Travel", amount: 1200, percent: 27, trend: -5, color: "hsl(210 90% 60%)" },
-      { name: "Shopping", amount: 900, percent: 20, trend: 12, color: "hsl(280 80% 60%)" },
-      { name: "Bills", amount: 600, percent: 13, trend: 0, color: "hsl(152 60% 50%)" },
+      { name: "Food", amount: 1800, percent: 40, trend: 18, color: "hsl(42 80% 50%)" },
+      { name: "Travel", amount: 1200, percent: 27, trend: -5, color: "hsl(145 65% 46%)" },
+      { name: "Shopping", amount: 900, percent: 20, trend: 12, color: "hsl(180 50% 42%)" },
+      { name: "Bills", amount: 600, percent: 13, trend: 0, color: "hsl(100 45% 42%)" },
     ],
     daily: [
       { day: "Mon", amount: 620 },
@@ -80,11 +80,11 @@ export const insightData = {
   month: {
     total: 18200,
     categories: [
-      { name: "Food", amount: 7280, percent: 40, trend: 8, color: "hsl(38 92% 55%)" },
-      { name: "Travel", amount: 4550, percent: 25, trend: -3, color: "hsl(210 90% 60%)" },
-      { name: "Shopping", amount: 3640, percent: 20, trend: 15, color: "hsl(280 80% 60%)" },
-      { name: "Bills", amount: 1820, percent: 10, trend: 0, color: "hsl(152 60% 50%)" },
-      { name: "Entertainment", amount: 910, percent: 5, trend: 22, color: "hsl(340 75% 55%)" },
+      { name: "Food", amount: 7280, percent: 40, trend: 8, color: "hsl(42 80% 50%)" },
+      { name: "Travel", amount: 4550, percent: 25, trend: -3, color: "hsl(145 65% 46%)" },
+      { name: "Shopping", amount: 3640, percent: 20, trend: 15, color: "hsl(180 50% 42%)" },
+      { name: "Bills", amount: 1820, percent: 10, trend: 0, color: "hsl(100 45% 42%)" },
+      { name: "Entertainment", amount: 910, percent: 5, trend: 22, color: "hsl(60 50% 45%)" },
     ],
     daily: [
       { day: "W1", amount: 4200 },
