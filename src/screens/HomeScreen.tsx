@@ -3,7 +3,7 @@ import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
 import { user, todaySpend, categorySnapshot, smartAlert, recentTransactions } from "@/data/mockData";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { CreditCard, QrCode, ArrowUpRight } from "lucide-react";
+import { QrCode, ArrowUpRight } from "lucide-react";
 import type { TabId } from "@/components/BottomNav";
 
 const stagger = {
@@ -90,9 +90,8 @@ export function HomeScreen({ onNavigate }: { onNavigate: (tab: TabId) => void })
       </motion.div>
 
       {/* Quick Actions */}
-      <motion.div variants={fadeUp} className="grid grid-cols-3 gap-3">
-        {[
-          { icon: CreditCard, label: "Pay", action: () => onNavigate("pay") },
+      <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3">
+      {[
           { icon: QrCode, label: "Scan", action: () => onNavigate("pay") },
           { icon: ArrowUpRight, label: "Request", action: () => {} },
         ].map((item) => (

@@ -65,7 +65,7 @@ export function InsightsScreen() {
         ) : (
           <motion.div key={period} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-5">
             {/* Donut Chart */}
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg glow-primary">
               <CardContent className="p-4">
                 <div className="relative mx-auto h-48 w-48">
                   <ResponsiveContainer>
@@ -102,9 +102,6 @@ export function InsightsScreen() {
                       <p className="text-sm font-medium text-foreground">{cat.name}</p>
                     </div>
                     <p className="text-sm font-semibold text-foreground">₹{cat.amount.toLocaleString("en-IN")}</p>
-                    <span className={`text-xs font-medium ${cat.trend > 0 ? "text-destructive" : cat.trend < 0 ? "text-success" : "text-muted-foreground"}`}>
-                      {cat.trend > 0 ? "↑" : cat.trend < 0 ? "↓" : "—"}{Math.abs(cat.trend)}%
-                    </span>
                   </div>
                 ))}
               </CardContent>
@@ -140,18 +137,24 @@ export function InsightsScreen() {
             </div>
 
             {/* Spending Trend */}
-            <Card className="border-0 shadow-lg">
+            <Card className="border-0 shadow-lg glow-primary">
               <CardContent className="p-4">
                 <h3 className="mb-3 font-display text-sm font-semibold text-foreground">Spending Trend</h3>
                 <ResponsiveContainer width="100%" height={140}>
                   <BarChart data={data.daily}>
+                    <defs>
+                      <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="0%" stopColor="hsl(210 90% 60%)" />
+                        <stop offset="100%" stopColor="hsl(280 80% 55%)" />
+                      </linearGradient>
+                    </defs>
                     <XAxis dataKey="day" axisLine={false} tickLine={false} tick={{ fontSize: 11, fill: "hsl(var(--muted-foreground))" }} />
                     <YAxis hide />
                     <Tooltip
                       contentStyle={{ borderRadius: 12, border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
                       formatter={(v: number) => [`₹${v.toLocaleString("en-IN")}`, "Spent"]}
                     />
-                    <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="hsl(var(--primary))" />
+                    <Bar dataKey="amount" radius={[6, 6, 0, 0]} fill="url(#barGradient)" />
                   </BarChart>
                 </ResponsiveContainer>
               </CardContent>

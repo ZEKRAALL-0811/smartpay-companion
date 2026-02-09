@@ -6,96 +6,58 @@
 
 @layer base {
   :root {
-    --background: 240 20% 97%;
-    --foreground: 234 40% 14%;
+    --background: 220 15% 10%;
+    --foreground: 220 15% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 234 40% 14%;
+    --card: 220 15% 14%;
+    --card-foreground: 220 15% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 234 40% 14%;
+    --popover: 220 15% 14%;
+    --popover-foreground: 220 15% 95%;
 
-    --primary: 245 58% 51%;
+    --primary: 210 80% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 240 20% 94%;
-    --secondary-foreground: 234 40% 14%;
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 220 15% 85%;
 
-    --muted: 240 15% 93%;
-    --muted-foreground: 234 10% 48%;
+    --muted: 220 12% 20%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 245 80% 96%;
-    --accent-foreground: 245 58% 51%;
+    --accent: 210 50% 18%;
+    --accent-foreground: 210 80% 70%;
 
-    --destructive: 0 72% 51%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 100%;
 
-    --success: 152 60% 42%;
+    --success: 152 55% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 38 92% 50%;
-    --warning-foreground: 38 92% 14%;
+    --warning: 38 90% 50%;
+    --warning-foreground: 38 90% 12%;
 
-    --safe: 152 60% 42%;
-    --over-budget: 0 72% 51%;
+    --safe: 152 55% 45%;
+    --over-budget: 0 65% 50%;
 
-    --border: 240 12% 90%;
-    --input: 240 12% 90%;
-    --ring: 245 58% 51%;
+    --border: 220 12% 20%;
+    --input: 220 12% 20%;
+    --ring: 210 80% 55%;
 
     --radius: 1rem;
 
-    --gradient-primary: linear-gradient(135deg, hsl(245 58% 51%), hsl(280 60% 55%));
-    --gradient-spend: linear-gradient(135deg, hsl(245 80% 96%), hsl(280 70% 95%));
-    --gradient-success: linear-gradient(135deg, hsl(152 60% 42%), hsl(170 55% 45%));
+    --gradient-primary: linear-gradient(135deg, hsl(210 80% 55%), hsl(250 70% 60%));
+    --gradient-spend: linear-gradient(135deg, hsl(220 15% 16%), hsl(250 30% 20%));
+    --gradient-success: linear-gradient(135deg, hsl(152 55% 45%), hsl(170 50% 48%));
+    --gradient-glow-chart: linear-gradient(180deg, hsl(210 90% 60%), hsl(280 80% 55%));
 
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 234 40% 8%;
-    --foreground: 240 20% 95%;
-
-    --card: 234 35% 12%;
-    --card-foreground: 240 20% 95%;
-
-    --popover: 234 35% 12%;
-    --popover-foreground: 240 20% 95%;
-
-    --primary: 245 65% 63%;
-    --primary-foreground: 0 0% 100%;
-
-    --secondary: 234 25% 18%;
-    --secondary-foreground: 240 20% 95%;
-
-    --muted: 234 20% 18%;
-    --muted-foreground: 234 10% 55%;
-
-    --accent: 245 40% 20%;
-    --accent-foreground: 245 65% 75%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 234 20% 20%;
-    --input: 234 20% 20%;
-    --ring: 245 65% 63%;
-
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-background: 220 15% 10%;
+    --sidebar-foreground: 220 15% 85%;
+    --sidebar-primary: 210 80% 55%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 220 12% 18%;
+    --sidebar-accent-foreground: 220 15% 85%;
+    --sidebar-border: 220 12% 20%;
+    --sidebar-ring: 210 80% 55%;
   }
 }
 
@@ -123,5 +85,14 @@
   }
   .gradient-success {
     background: var(--gradient-success);
+  }
+  .gradient-glow-chart {
+    background: var(--gradient-glow-chart);
+  }
+  .glow-primary {
+    box-shadow: 0 0 20px hsl(210 80% 55% / 0.3), 0 0 60px hsl(210 80% 55% / 0.1);
+  }
+  .glow-chart {
+    filter: drop-shadow(0 0 8px hsl(210 90% 60% / 0.4)) drop-shadow(0 0 20px hsl(280 80% 55% / 0.2));
   }
 }

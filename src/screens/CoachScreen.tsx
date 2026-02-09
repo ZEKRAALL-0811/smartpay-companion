@@ -69,7 +69,7 @@ export function CoachScreen() {
           🤖
         </div>
         <div>
-          <h1 className="font-display text-xl font-bold text-foreground">AI Coach</h1>
+          <h1 className="font-display text-xl font-bold text-foreground">SmartPay Assistant</h1>
           <p className="text-xs text-success font-medium">● Online</p>
         </div>
       </div>

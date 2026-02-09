@@ -2,8 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { articles, learnTopics } from "@/data/mockData";
 import { Card, CardContent } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { Bookmark, Clock, CheckCircle2 } from "lucide-react";
+import { Bookmark, Clock } from "lucide-react";
 
 const filterOptions = ["All", "Markets", "Savings", "Crypto", "Tax Tips", "Investing", "Budgeting", "Personal Finance"];
 
@@ -123,24 +122,8 @@ export function HubScreen() {
               <CardContent className="flex items-start gap-3 p-4">
                 <span className="text-2xl shrink-0">{topic.emoji}</span>
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-semibold text-foreground">{topic.title}</p>
-                    {topic.progress === 100 && (
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                    )}
-                  </div>
+                  <p className="text-sm font-semibold text-foreground">{topic.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{topic.subtitle}</p>
-                  {topic.progress > 0 && topic.progress < 100 && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <Progress value={topic.progress} className="h-2 flex-1" />
-                      <span className="text-xs text-muted-foreground">{topic.progress}%</span>
-                    </div>
-                  )}
-                  {topic.progress === 0 && (
-                    <button className="mt-2 rounded-full bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
-                      Start
-                    </button>
-                  )}
                 </div>
               </CardContent>
             </Card>
