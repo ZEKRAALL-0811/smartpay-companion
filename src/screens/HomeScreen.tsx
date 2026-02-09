@@ -1,8 +1,11 @@
 import { motion } from "framer-motion";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
-import { user, todaySpend, categorySnapshot, smartAlert, recentTransactions } from "@/data/mockData";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Skeleton } from "@/components/ui/skeleton";
 import { QrCode, ArrowUpRight } from "lucide-react";
 import type { TabId } from "@/components/BottomNav";
 
@@ -23,45 +26,69 @@ function getGreeting() {
 }
 
 export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: TabId) => void; onOpenProfile?: () => void }) {
+  const { user } = useAuth();
+
+  const { data: profile } = useQuery({
+    queryKey: ["profile", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("profiles").select("*").eq("id", user!.id).maybeSingle();
+      return data;
+    },
+    enabled: !!user,
+  });
+
+  const { data: transactions, isLoading } = useQuery({
+    queryKey: ["recent-transactions", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("transactions").select("*").eq("user_id", user!.id).order("created_at", { ascending: false }).limit(10);
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const todaySpend = transactions?.reduce((sum, t) => sum + Math.abs(Number(t.amount)), 0) || 0;
   const animatedSpend = useAnimatedCounter(todaySpend);
 
+  const userName = profile?.name || user?.email?.split("@")[0] || "there";
+  const avatar = userName.charAt(0).toUpperCase();
+
+  // Category snapshot from transactions
+  const catMap: Record<string, { amount: number; emoji: string }> = {};
+  const emojiMap: Record<string, string> = { Food: "🍔", Travel: "🚗", Shopping: "🛍️", Bills: "📱", Entertainment: "🎬", Health: "💊", General: "💰" };
+  transactions?.forEach((t) => {
+    if (!catMap[t.category]) catMap[t.category] = { amount: 0, emoji: emojiMap[t.category] || "💰" };
+    catMap[t.category].amount += Math.abs(Number(t.amount));
+  });
+  const categorySnapshot = Object.entries(catMap).slice(0, 3).map(([label, v]) => ({ label, ...v }));
+
   return (
-    <motion.div
-      className="space-y-5 px-4 pb-24 pt-6"
-      variants={stagger}
-      initial="hidden"
-      animate="show"
-    >
-      {/* Greeting */}
+    <motion.div className="space-y-5 px-4 pb-24 pt-6" variants={stagger} initial="hidden" animate="show">
       <motion.div variants={fadeUp} className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">
-            {getGreeting()}, {user.name} ☀️
+            {getGreeting()}, {userName} ☀️
           </h1>
           <p className="text-sm text-muted-foreground">Here's your spending story today</p>
         </div>
-        <button
-          onClick={onOpenProfile}
-          className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg shadow-lg transition-all active:scale-95 hover:glow-blue"
-        >
-          {user.avatar}
+        <button onClick={onOpenProfile} className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg shadow-lg transition-all active:scale-95 hover:glow-blue">
+          {avatar}
         </button>
       </motion.div>
 
-      {/* Today's Spend */}
       <motion.div variants={fadeUp}>
         <Card className="overflow-hidden border-0 glow-card">
           <div className="gradient-spend p-6">
             <p className="text-sm font-medium text-muted-foreground">Today's Spending</p>
-            <p className="mt-1 font-display text-4xl font-bold text-foreground animate-count-up">
-              ₹{animatedSpend.toLocaleString("en-IN")}
-            </p>
+            {isLoading ? (
+              <Skeleton className="mt-1 h-10 w-32" />
+            ) : (
+              <p className="mt-1 font-display text-4xl font-bold text-foreground animate-count-up">
+                ₹{animatedSpend.toLocaleString("en-IN")}
+              </p>
+            )}
             <div className="mt-4 flex gap-3">
               {categorySnapshot.map((cat) => (
-                <div
-                  key={cat.label}
-                  className="flex items-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-medium backdrop-blur-sm"
-                >
+                <div key={cat.label} className="flex items-center gap-1.5 rounded-full bg-secondary/80 px-3 py-1.5 text-xs font-medium backdrop-blur-sm">
                   <span>{cat.emoji}</span>
                   <span className="text-muted-foreground">{cat.label}</span>
                   <span className="font-semibold text-foreground">₹{cat.amount}</span>
@@ -72,37 +99,13 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
         </Card>
       </motion.div>
 
-      {/* Smart Alert */}
-      <motion.div variants={fadeUp}>
-        <Card className="border-warning/15 bg-warning/5">
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <span className="text-xl">⚠️</span>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-foreground">{smartAlert.message}</p>
-                <div className="mt-2">
-                  <Progress value={smartAlert.progress} className="h-2 bg-warning/15" />
-                </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {smartAlert.progress}% of weekly {smartAlert.category.toLowerCase()} budget used
-                </p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* Quick Actions */}
       <motion.div variants={fadeUp} className="grid grid-cols-2 gap-3">
         {[
           { icon: QrCode, label: "Scan", action: () => onNavigate("pay") },
           { icon: ArrowUpRight, label: "Request", action: () => {} },
         ].map((item) => (
-          <button
-            key={item.label}
-            onClick={item.action}
-            className="flex flex-col items-center gap-2 rounded-2xl bg-card p-4 glow-card transition-all active:scale-95 hover:bg-secondary"
-          >
+          <button key={item.label} onClick={item.action} className="flex flex-col items-center gap-2 rounded-2xl bg-card p-4 glow-card transition-all active:scale-95 hover:bg-secondary">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary text-primary-foreground">
               <item.icon className="h-5 w-5" />
             </div>
@@ -119,18 +122,31 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
         </div>
         <Card className="glow-card">
           <CardContent className="divide-y divide-border p-0">
-            {recentTransactions.map((tx) => (
-              <div key={tx.id} className="flex items-center gap-3 px-4 py-3">
-                <span className="text-xl">{tx.icon}</span>
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-foreground">{tx.merchant}</p>
-                  <p className="text-xs text-muted-foreground">{tx.time}</p>
+            {isLoading ? (
+              Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 px-4 py-3">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex-1 space-y-1">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-3 w-16" />
+                  </div>
+                  <Skeleton className="h-4 w-12" />
                 </div>
-                <p className="text-sm font-semibold text-destructive">
-                  ₹{Math.abs(tx.amount)}
-                </p>
-              </div>
-            ))}
+              ))
+            ) : transactions && transactions.length > 0 ? (
+              transactions.map((tx) => (
+                <div key={tx.id} className="flex items-center gap-3 px-4 py-3">
+                  <span className="text-xl">{tx.icon}</span>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-foreground">{tx.merchant}</p>
+                    <p className="text-xs text-muted-foreground">{tx.time}</p>
+                  </div>
+                  <p className="text-sm font-semibold text-destructive">₹{Math.abs(Number(tx.amount))}</p>
+                </div>
+              ))
+            ) : (
+              <p className="px-4 py-6 text-center text-sm text-muted-foreground">No transactions yet. Make a payment to get started!</p>
+            )}
           </CardContent>
         </Card>
       </motion.div>
