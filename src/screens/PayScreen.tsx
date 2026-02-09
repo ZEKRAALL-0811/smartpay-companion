@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -8,9 +8,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { QrCode, Check } from "lucide-react";
+import { QrCode, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import confetti from "canvas-confetti";
+import { QrScanner } from "@/components/QrScanner";
+import { useNativeContacts } from "@/hooks/useNativeContacts";
 
 type PayState = "form" | "success";
 
@@ -21,6 +23,13 @@ export function PayScreen() {
   const [amount, setAmount] = useState("");
   const [selectedContact, setSelectedContact] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
+  const { syncContacts, syncing } = useNativeContacts();
+
+  const handleQrScan = useCallback((data: string) => {
+    toast.success("QR scanned: " + data);
+    // You can parse UPI or payment data from the QR string here
+  }, []);
 
   const { data: contacts, isLoading } = useQuery({
     queryKey: ["contacts", user?.id],
@@ -72,15 +81,23 @@ export function PayScreen() {
           <motion.div key="form" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-5">
             <h1 className="font-display text-2xl font-bold text-foreground">Pay 💸</h1>
 
-            <Card className="border-dashed border-2 border-primary/20 bg-accent/30">
+            <Card className="border-dashed border-2 border-primary/20 bg-accent/30 cursor-pointer active:scale-95 transition-all" onClick={() => setScannerOpen(true)}>
               <CardContent className="flex flex-col items-center gap-2 p-8">
                 <QrCode className="h-12 w-12 text-primary/40" />
-                <p className="text-sm font-medium text-muted-foreground">Scan to Pay</p>
+                <p className="text-sm font-medium text-muted-foreground">Tap to Scan QR</p>
               </CardContent>
             </Card>
 
+            <QrScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleQrScan} />
+
             <div>
-              <p className="mb-3 text-sm font-medium text-foreground">Pay to Contact</p>
+              <div className="mb-3 flex items-center justify-between">
+                <p className="text-sm font-medium text-foreground">Pay to Contact</p>
+                <Button variant="ghost" size="sm" onClick={() => user && syncContacts(user.id)} disabled={syncing} className="text-xs gap-1">
+                  <RefreshCw className={`h-3 w-3 ${syncing ? "animate-spin" : ""}`} />
+                  Sync Contacts
+                </Button>
+              </div>
               <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-themed">
                 {isLoading ? (
                   Array.from({ length: 5 }).map((_, i) => (
