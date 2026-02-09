@@ -6,7 +6,7 @@ const tabs = [
   { id: "home", label: "Home", icon: Home },
   { id: "pay", label: "Pay", icon: CreditCard },
   { id: "insights", label: "Insights", icon: BarChart3 },
-  { id: "coach", label: "Coach", icon: Bot },
+  { id: "coach", label: "Assistant", icon: Bot },
   { id: "hub", label: "Hub", icon: Newspaper },
 ] as const;
 
@@ -19,7 +19,7 @@ interface BottomNavProps {
 
 export function BottomNav({ active, onChange }: BottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/80 backdrop-blur-xl">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-card/90 backdrop-blur-xl">
       <div className="mx-auto flex max-w-md items-center justify-around py-2">
         {tabs.map((tab) => {
           const isActive = active === tab.id;
