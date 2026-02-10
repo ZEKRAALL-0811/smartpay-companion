@@ -130,7 +130,11 @@ export function InsightsScreen() {
                             <span>{b.emoji} {b.category}</span>
                             <span className="text-muted-foreground">₹{b.spent.toLocaleString("en-IN")} / ₹{b.limit.toLocaleString("en-IN")}</span>
                           </div>
-                          <Progress value={Math.min(pct, 100)} className={`mt-2 h-2 ${status === "destructive" ? "bg-destructive/20" : status === "warning" ? "bg-warning/20" : "bg-success/20"}`} />
+                          <Progress
+                            value={Math.min(pct, 100)}
+                            className={`mt-2 h-2 ${status === "destructive" ? "bg-destructive/20" : status === "warning" ? "bg-warning/20" : "bg-success/20"}`}
+                            indicatorClassName={status === "destructive" ? "bg-destructive" : status === "warning" ? "bg-yellow-500" : "bg-primary"}
+                          />
                         </CardContent>
                       </Card>
                     );
