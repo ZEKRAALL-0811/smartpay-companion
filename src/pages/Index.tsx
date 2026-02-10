@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { Shield } from "lucide-react";
 import { BottomNav, type TabId } from "@/components/BottomNav";
 import { HomeScreen } from "@/screens/HomeScreen";
 import { PayScreen } from "@/screens/PayScreen";
@@ -9,11 +10,11 @@ import { HubScreen } from "@/screens/HubScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
 import { AppPinLockScreen } from "@/components/AppPinLockScreen";
+import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { generateDeviceFingerprint } from "@/lib/deviceFingerprint";
-import { toast } from "sonner";
 
 const screens: Record<TabId, React.ComponentType<{ onNavigate: (tab: TabId) => void }>> = {
   home: HomeScreen,
@@ -24,7 +25,7 @@ const screens: Record<TabId, React.ComponentType<{ onNavigate: (tab: TabId) => v
 };
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [showProfile, setShowProfile] = useState(false);
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
@@ -45,7 +46,7 @@ const Index = () => {
     enabled: !!user,
   });
 
-  // Verify device fingerprint
+  // Verify device fingerprint (web-compatible SIM/device binding)
   useEffect(() => {
     if (!bankAccount?.device_fingerprint) {
       setDeviceTrusted(true); // No fingerprint stored yet, allow
@@ -54,9 +55,6 @@ const Index = () => {
     generateDeviceFingerprint().then((currentFp) => {
       const trusted = currentFp === bankAccount.device_fingerprint;
       setDeviceTrusted(trusted);
-      if (!trusted) {
-        toast.warning("Unrecognized device detected. Extra verification may be required.", { duration: 5000 });
-      }
     });
   }, [bankAccount?.device_fingerprint]);
 
@@ -67,6 +65,40 @@ const Index = () => {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
+
+  // Show UPI setup if not complete
+  // Block access if device fingerprint doesn't match (SIM/device binding)
+  if (deviceTrusted === false) {
+    return (
+      <div className="mx-auto min-h-screen max-w-md bg-background flex items-center justify-center px-4">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-xs text-center space-y-6"
+        >
+          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-destructive/10">
+            <Shield className="h-10 w-10 text-destructive" />
+          </div>
+          <div>
+            <h1 className="font-display text-2xl font-bold text-foreground">Unrecognized Device</h1>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This device does not match the one registered with your account. For your security, access is blocked.
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Please log in from your registered device or contact support to update your device binding.
+            </p>
+          </div>
+          <Button
+            onClick={signOut}
+            variant="outline"
+            className="h-12 w-full rounded-xl font-display font-bold"
+          >
+            Sign Out
+          </Button>
+        </motion.div>
       </div>
     );
   }
