@@ -9,6 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { QrCode, ArrowUpRight, ArrowDownLeft, Wallet } from "lucide-react";
 import { RequestMoneyDialog } from "@/components/RequestMoneyDialog";
 import { CheckBalanceDialog } from "@/components/CheckBalanceDialog";
+import { NotificationCenter } from "@/components/NotificationCenter";
+import { useBudgetAlerts } from "@/hooks/useBudgetAlerts";
 import type { TabId } from "@/components/BottomNav";
 
 const stagger = {
@@ -31,6 +33,7 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
   const { user } = useAuth();
   const [requestOpen, setRequestOpen] = useState(false);
   const [balanceOpen, setBalanceOpen] = useState(false);
+  useBudgetAlerts();
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -81,9 +84,12 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
             </h1>
             <p className="text-sm text-muted-foreground">Here's your spending story today</p>
           </div>
-          <button onClick={onOpenProfile} className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg shadow-lg transition-all active:scale-95 hover:glow-blue">
-            {avatar}
-          </button>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <button onClick={onOpenProfile} className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground font-display font-bold text-lg shadow-lg transition-all active:scale-95 hover:glow-blue">
+              {avatar}
+            </button>
+          </div>
         </motion.div>
 
         <motion.div variants={fadeUp}>
