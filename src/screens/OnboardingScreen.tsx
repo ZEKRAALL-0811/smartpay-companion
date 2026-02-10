@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -28,20 +27,25 @@ const STEPS: { id: Step; label: string; icon: React.ElementType }[] = [
   { id: "app_pin", label: "App PIN", icon: Shield },
 ];
 
-const slideIn = { initial: { opacity: 0, x: 30 }, animate: { opacity: 1, x: 0 }, exit: { opacity: 0, x: -30 } };
+const slideIn = {
+  initial: { opacity: 0, x: 30 },
+  animate: { opacity: 1, x: 0 },
+  exit: { opacity: 0, x: -30 },
+};
 
 export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
-  const { user } = useAuth();
   const [step, setStep] = useState<Step>("phone");
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<string | null>(null);
 
   // Phone & OTP
   const [mobile, setMobile] = useState("");
   const [otp, setOtp] = useState("");
   const [generatedOtp, setGeneratedOtp] = useState("");
 
-  // Email
+  // Email & Password (for Supabase auth)
   const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   // Card
   const [cardNumber, setCardNumber] = useState("");
@@ -59,7 +63,8 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   const currentStepIndex = STEPS.findIndex(
     (s) => s.id === step || (step === "otp" && s.id === "phone")
   );
-  const progressPercent = step === "done" ? 100 : ((currentStepIndex + 1) / STEPS.length) * 100;
+  const progressPercent =
+    step === "done" ? 100 : ((currentStepIndex + 1) / STEPS.length) * 100;
 
   const formatCardNumber = (val: string) => {
     const digits = val.replace(/\D/g, "").slice(0, 16);
@@ -109,13 +114,36 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
     setStep("email");
   };
 
-  const handleEmailNext = () => {
+  const handleEmailNext = async () => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       toast.error("Enter a valid email address");
       return;
     }
-    setStep("card");
+    if (password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    setLoading(true);
+    try {
+      // Create Supabase account here
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: { name: email.split("@")[0] },
+        },
+      });
+      if (error) throw error;
+      setUserId(data.user?.id || null);
+      toast.success("Account created! Continue setup...");
+      setStep("card");
+    } catch (err: any) {
+      toast.error(err.message || "Signup failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleCardNext = () => {
@@ -156,10 +184,15 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
       toast.error("App PINs do not match");
       return;
     }
-    if (!user) return;
 
     setLoading(true);
     try {
+      // Get current user from session (signed up at email step)
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
+
       const digits = cardNumber.replace(/\s/g, "");
       const upiId = `${mobile}@smartpay`;
 
@@ -196,6 +229,11 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
     if (map[step]) setStep(map[step]);
   };
 
+  const handleDone = () => {
+    // Navigate to home — session is already active from signup
+    window.location.href = "/";
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <motion.div
@@ -208,7 +246,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
           <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl gradient-primary text-2xl shadow-lg">
             🏦
           </div>
-          <h1 className="font-display text-2xl font-bold text-foreground">Set Up Your Account</h1>
+          <h1 className="font-display text-2xl font-bold text-foreground">
+            Set Up Your Account
+          </h1>
           <p className="mt-1 text-sm text-muted-foreground">
             {step === "done"
               ? "All done!"
@@ -232,7 +272,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                   >
                     {i < currentStepIndex ? "✓" : i + 1}
                   </div>
-                  <span className="text-[9px] text-muted-foreground">{s.label}</span>
+                  <span className="text-[9px] text-muted-foreground">
+                    {s.label}
+                  </span>
                 </div>
               ))}
             </div>
@@ -275,7 +317,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                     className="h-12 w-full rounded-xl gradient-primary font-display font-bold"
                   >
                     {loading ? "Sending..." : "Send OTP"}
-                    <ArrowRight className="ml-2 h-4 w-4" />
+                    {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
                   </Button>
                 </CardContent>
               </Card>
@@ -333,7 +375,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
             </motion.div>
           )}
 
-          {/* ─── STEP 2: Email ─── */}
+          {/* ─── STEP 2: Email + Password ─── */}
           {step === "email" && (
             <motion.div key="email" {...slideIn}>
               <Card className="border-0 glow-card">
@@ -341,19 +383,37 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                   <div className="flex items-center gap-3">
                     <Mail className="h-5 w-5 text-primary" />
                     <h2 className="font-display text-lg font-semibold text-foreground">
-                      Email Address
+                      Email & Password
                     </h2>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    We'll use this for account recovery and notifications
+                    Create your login credentials
                   </p>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="h-12 rounded-xl"
-                    placeholder="you@example.com"
-                  />
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Email
+                    </label>
+                    <Input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="h-12 rounded-xl"
+                      placeholder="you@example.com"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">
+                      Password
+                    </label>
+                    <Input
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="h-12 rounded-xl"
+                      placeholder="Min 6 characters"
+                      minLength={6}
+                    />
+                  </div>
                   <div className="flex gap-3">
                     <Button
                       variant="outline"
@@ -364,10 +424,11 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                     </Button>
                     <Button
                       onClick={handleEmailNext}
-                      disabled={!email}
+                      disabled={!email || password.length < 6 || loading}
                       className="h-12 flex-1 rounded-xl gradient-primary font-display font-bold"
                     >
-                      Continue <ArrowRight className="ml-2 h-4 w-4" />
+                      {loading ? "Creating..." : "Continue"}
+                      {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
                     </Button>
                   </div>
                 </CardContent>
@@ -395,7 +456,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                     </label>
                     <Input
                       value={cardNumber}
-                      onChange={(e) => setCardNumber(formatCardNumber(e.target.value))}
+                      onChange={(e) =>
+                        setCardNumber(formatCardNumber(e.target.value))
+                      }
                       className="h-12 rounded-xl font-mono"
                       placeholder="4321 5678 9012 3456"
                       maxLength={19}
@@ -408,7 +471,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                       </label>
                       <Input
                         value={cardExpiry}
-                        onChange={(e) => setCardExpiry(formatExpiry(e.target.value))}
+                        onChange={(e) =>
+                          setCardExpiry(formatExpiry(e.target.value))
+                        }
                         className="h-12 rounded-xl"
                         placeholder="MM/YY"
                         maxLength={5}
@@ -422,7 +487,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                         type="password"
                         value={cardCvv}
                         onChange={(e) =>
-                          setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 3))
+                          setCardCvv(
+                            e.target.value.replace(/\D/g, "").slice(0, 3)
+                          )
                         }
                         className="h-12 rounded-xl"
                         placeholder="•••"
@@ -472,7 +539,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                       type="password"
                       value={upiPin}
                       onChange={(e) =>
-                        setUpiPin(e.target.value.replace(/\D/g, "").slice(0, 6))
+                        setUpiPin(
+                          e.target.value.replace(/\D/g, "").slice(0, 6)
+                        )
                       }
                       className="h-12 rounded-xl text-center text-2xl tracking-[0.5em]"
                       placeholder="••••••"
@@ -487,7 +556,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                       type="password"
                       value={confirmUpiPin}
                       onChange={(e) =>
-                        setConfirmUpiPin(e.target.value.replace(/\D/g, "").slice(0, 6))
+                        setConfirmUpiPin(
+                          e.target.value.replace(/\D/g, "").slice(0, 6)
+                        )
                       }
                       className="h-12 rounded-xl text-center text-2xl tracking-[0.5em]"
                       placeholder="••••••"
@@ -537,7 +608,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                       type="password"
                       value={appPin}
                       onChange={(e) =>
-                        setAppPin(e.target.value.replace(/\D/g, "").slice(0, 6))
+                        setAppPin(
+                          e.target.value.replace(/\D/g, "").slice(0, 6)
+                        )
                       }
                       className="h-12 rounded-xl text-center text-2xl tracking-[0.5em]"
                       placeholder="••••"
@@ -552,7 +625,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                       type="password"
                       value={confirmAppPin}
                       onChange={(e) =>
-                        setConfirmAppPin(e.target.value.replace(/\D/g, "").slice(0, 6))
+                        setConfirmAppPin(
+                          e.target.value.replace(/\D/g, "").slice(0, 6)
+                        )
                       }
                       className="h-12 rounded-xl text-center text-2xl tracking-[0.5em]"
                       placeholder="••••"
@@ -591,7 +666,12 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
               <motion.div
                 initial={{ scale: 0 }}
                 animate={{ scale: 1 }}
-                transition={{ type: "spring", stiffness: 200, damping: 15, delay: 0.2 }}
+                transition={{
+                  type: "spring",
+                  stiffness: 200,
+                  damping: 15,
+                  delay: 0.2,
+                }}
               >
                 <CheckCircle className="h-20 w-20 text-primary" />
               </motion.div>
@@ -607,7 +687,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
                 </p>
               </div>
               <Button
-                onClick={onComplete}
+                onClick={handleDone}
                 className="h-12 w-full max-w-xs rounded-xl gradient-primary font-display font-bold"
               >
                 Go to Home
