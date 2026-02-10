@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
@@ -12,8 +12,50 @@ import { CheckBalanceDialog } from "@/components/CheckBalanceDialog";
 import { NotificationCenter } from "@/components/NotificationCenter";
 import { QrScanner } from "@/components/QrScanner";
 import { useBudgetAlerts } from "@/hooks/useBudgetAlerts";
+import { BudgetExceededOverlay } from "@/components/BudgetExceededOverlay";
 import { toast } from "sonner";
 import type { TabId } from "@/components/BottomNav";
+
+const DAILY_QUOTES = [
+  "The only way to do great work is to love what you do. — Steve Jobs",
+  "Success is not final, failure is not fatal: it is the courage to continue that counts. — Winston Churchill",
+  "Do not save what is left after spending, but spend what is left after saving. — Warren Buffett",
+  "A budget is telling your money where to go instead of wondering where it went. — Dave Ramsey",
+  "Financial freedom is available to those who learn about it and work for it. — Robert Kiyosaki",
+  "The habit of saving is itself an education; it fosters every virtue. — T.T. Munger",
+  "Beware of little expenses; a small leak will sink a great ship. — Benjamin Franklin",
+  "Money is a terrible master but an excellent servant. — P.T. Barnum",
+  "It's not your salary that makes you rich, it's your spending habits. — Charles A. Jaffe",
+  "Wealth consists not in having great possessions, but in having few wants. — Epictetus",
+  "An investment in knowledge pays the best interest. — Benjamin Franklin",
+  "The art is not in making money, but in keeping it. — Proverb",
+  "Don't tell me where your priorities are. Show me where you spend your money. — James W. Frick",
+  "Every morning brings new potential, but if you dwell on the misfortunes of the day before, you tend to overlook tremendous opportunities. — Harvey Mackay",
+  "Rich people stay rich by living like they're broke. Broke people stay broke by living like they're rich.",
+  "The secret to getting ahead is getting started. — Mark Twain",
+  "Small daily improvements over time lead to stunning results. — Robin Sharma",
+  "Money grows on the tree of persistence. — Japanese Proverb",
+  "You must gain control over your money or the lack of it will forever control you. — Dave Ramsey",
+  "Save a little money each month and at the end of the year you'll be surprised at how little you have. — Ernest Haskins",
+  "The best time to plant a tree was 20 years ago. The second best time is now. — Chinese Proverb",
+  "Discipline is the bridge between goals and accomplishment. — Jim Rohn",
+  "Your future is created by what you do today, not tomorrow. — Robert Kiyosaki",
+  "A penny saved is a penny earned. — Benjamin Franklin",
+  "Motivation is what gets you started. Habit is what keeps you going. — Jim Ryun",
+  "Opportunities don't happen. You create them. — Chris Grosser",
+  "The journey of a thousand miles begins with one step. — Lao Tzu",
+  "It always seems impossible until it's done. — Nelson Mandela",
+  "Believe you can and you're halfway there. — Theodore Roosevelt",
+  "Dream big, start small, act now. — Robin Sharma",
+  "Your limitation — it's only your imagination.",
+];
+
+function getDailyQuote(): string {
+  const dayOfYear = Math.floor(
+    (Date.now() - new Date(new Date().getFullYear(), 0, 0).getTime()) / 86400000
+  );
+  return DAILY_QUOTES[dayOfYear % DAILY_QUOTES.length];
+}
 
 const stagger = {
   hidden: {},
@@ -37,6 +79,50 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
   const [balanceOpen, setBalanceOpen] = useState(false);
   const [scannerOpen, setScannerOpen] = useState(false);
   useBudgetAlerts();
+
+  const dailyQuote = getDailyQuote();
+
+  // Fetch budgets + this month's transactions for the overlay
+  const { data: budgets } = useQuery({
+    queryKey: ["budgets-home", user?.id],
+    queryFn: async () => {
+      const { data } = await supabase.from("budgets").select("*").eq("user_id", user!.id);
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const { data: monthTx } = useQuery({
+    queryKey: ["month-tx-home", user?.id],
+    queryFn: async () => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { data } = await supabase
+        .from("transactions")
+        .select("category, amount")
+        .eq("user_id", user!.id)
+        .gte("created_at", monthStart);
+      return data || [];
+    },
+    enabled: !!user,
+  });
+
+  const budgetAlerts = useMemo(() => {
+    if (!budgets || !monthTx) return [];
+    const catSpend: Record<string, number> = {};
+    monthTx.forEach((t) => {
+      catSpend[t.category] = (catSpend[t.category] || 0) + Math.abs(Number(t.amount));
+    });
+    const emojiMap: Record<string, string> = { Food: "🍔", Travel: "🚗", Shopping: "🛍️", Bills: "📱", Entertainment: "🎬", Health: "💊", Clothing: "👕", Accessories: "⌚", General: "💰" };
+    return budgets
+      .filter((b) => (catSpend[b.category] || 0) > Number(b.budget_limit))
+      .map((b) => ({
+        category: b.category,
+        emoji: b.emoji || emojiMap[b.category] || "💰",
+        spent: catSpend[b.category] || 0,
+        limit: Number(b.budget_limit),
+      }));
+  }, [budgets, monthTx]);
 
   const handleQrScan = useCallback((data: string) => {
     toast.success("QR scanned: " + data);
@@ -85,11 +171,11 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
     <>
       <motion.div className="space-y-5 px-4 pb-24 pt-6" variants={stagger} initial="hidden" animate="show">
         <motion.div variants={fadeUp} className="flex items-center justify-between">
-          <div>
+           <div>
             <h1 className="text-2xl font-display font-bold text-foreground">
               {getGreeting()}, {userName} ☀️
             </h1>
-            <p className="text-sm text-muted-foreground">Here's your spending story today</p>
+            <p className="mt-1 text-xs italic text-muted-foreground leading-relaxed">"{dailyQuote}"</p>
           </div>
           <div className="flex items-center gap-2">
             <NotificationCenter />
@@ -178,6 +264,7 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
       <QrScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleQrScan} />
       <RequestMoneyDialog open={requestOpen} onClose={() => setRequestOpen(false)} />
       <CheckBalanceDialog open={balanceOpen} onClose={() => setBalanceOpen(false)} />
+      <BudgetExceededOverlay alerts={budgetAlerts} />
     </>
   );
 }
