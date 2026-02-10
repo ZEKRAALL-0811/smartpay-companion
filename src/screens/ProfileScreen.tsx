@@ -1,4 +1,5 @@
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -6,20 +7,28 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, Bell, Shield, CreditCard, HelpCircle, LogOut, ChevronRight, Settings } from "lucide-react";
 import { toast } from "sonner";
+import { LinkedAccountsSheet } from "@/components/profile/LinkedAccountsSheet";
+import { NotificationPrefsSheet } from "@/components/profile/NotificationPrefsSheet";
+import { SecuritySheet } from "@/components/profile/SecuritySheet";
+import { HelpSupportSheet } from "@/components/profile/HelpSupportSheet";
+import { PreferencesSheet } from "@/components/profile/PreferencesSheet";
 
 const stagger = { hidden: {}, show: { transition: { staggerChildren: 0.06 } } };
 const fadeUp = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } };
 
-const menuItems = [
-  { icon: CreditCard, label: "Linked Accounts", subtitle: "2 bank accounts linked" },
-  { icon: Bell, label: "Notifications", subtitle: "Push & email alerts" },
-  { icon: Shield, label: "Security", subtitle: "Biometrics, PIN & password" },
-  { icon: Settings, label: "Preferences", subtitle: "Language, currency, theme" },
-  { icon: HelpCircle, label: "Help & Support", subtitle: "FAQs and contact us" },
+type SubScreen = null | "linked" | "notifications" | "security" | "preferences" | "help";
+
+const menuItems: { icon: any; label: string; subtitle: string; screen: SubScreen }[] = [
+  { icon: CreditCard, label: "Linked Accounts", subtitle: "2 bank accounts linked", screen: "linked" },
+  { icon: Bell, label: "Notifications", subtitle: "Push & email alerts", screen: "notifications" },
+  { icon: Shield, label: "Security", subtitle: "Biometrics, PIN & password", screen: "security" },
+  { icon: Settings, label: "Preferences", subtitle: "Language, currency, theme", screen: "preferences" },
+  { icon: HelpCircle, label: "Help & Support", subtitle: "FAQs and contact us", screen: "help" },
 ];
 
 export function ProfileScreen({ onBack }: { onBack: () => void }) {
   const { user, signOut } = useAuth();
+  const [subScreen, setSubScreen] = useState<SubScreen>(null);
 
   const { data: profile, isLoading } = useQuery({
     queryKey: ["profile", user?.id],
@@ -46,6 +55,20 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
 
   const userName = profile?.name || user?.email?.split("@")[0] || "User";
   const avatar = userName.charAt(0).toUpperCase();
+
+  // Sub-screen routing
+  if (subScreen) {
+    const goBack = () => setSubScreen(null);
+    return (
+      <AnimatePresence mode="wait">
+        {subScreen === "linked" && <LinkedAccountsSheet onBack={goBack} />}
+        {subScreen === "notifications" && <NotificationPrefsSheet onBack={goBack} />}
+        {subScreen === "security" && <SecuritySheet onBack={goBack} />}
+        {subScreen === "preferences" && <PreferencesSheet onBack={goBack} />}
+        {subScreen === "help" && <HelpSupportSheet onBack={goBack} />}
+      </AnimatePresence>
+    );
+  }
 
   return (
     <motion.div className="space-y-5 px-4 pb-24 pt-6 scrollbar-themed overflow-y-auto" variants={stagger} initial="hidden" animate="show">
@@ -93,7 +116,11 @@ export function ProfileScreen({ onBack }: { onBack: () => void }) {
         <Card className="glow-card">
           <CardContent className="divide-y divide-border p-0">
             {menuItems.map((item) => (
-              <button key={item.label} className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-secondary/50 active:scale-[0.99]">
+              <button
+                key={item.label}
+                onClick={() => setSubScreen(item.screen)}
+                className="flex w-full items-center gap-3 px-4 py-3.5 text-left transition-colors hover:bg-secondary/50 active:scale-[0.99]"
+              >
                 <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-accent-foreground">
                   <item.icon className="h-4 w-4" />
                 </div>
