@@ -15,7 +15,7 @@ const MOTIVATIONAL_MESSAGES = [
 export function useBudgetAlerts() {
   const { user } = useAuth();
   const qc = useQueryClient();
-  const lastAlertRef = useRef<string>("");
+  const lastAlertRef = useRef<Set<string>>(new Set());
   const motivationalSentRef = useRef(false);
 
   const { data: budgets } = useQuery({
@@ -25,23 +25,50 @@ export function useBudgetAlerts() {
       return data || [];
     },
     enabled: !!user,
-    refetchInterval: 60000,
+    refetchInterval: 30000,
   });
 
-  // Check for budget overages
+  // Fetch this month's transactions to compute actual spend per category
+  const { data: monthTransactions } = useQuery({
+    queryKey: ["month-transactions-alert", user?.id],
+    queryFn: async () => {
+      const now = new Date();
+      const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { data } = await supabase
+        .from("transactions")
+        .select("category, amount")
+        .eq("user_id", user!.id)
+        .gte("created_at", monthStart);
+      return data || [];
+    },
+    enabled: !!user,
+    refetchInterval: 15000, // check every 15s for new transactions
+  });
+
+  // Check for budget overages using real transaction data
   useEffect(() => {
-    if (!budgets || !user) return;
+    if (!budgets || !monthTransactions || !user) return;
+
+    // Compute actual spent per category from transactions
+    const catSpend: Record<string, number> = {};
+    monthTransactions.forEach((t) => {
+      catSpend[t.category] = (catSpend[t.category] || 0) + Math.abs(Number(t.amount));
+    });
 
     budgets.forEach((b) => {
-      const pct = (Number(b.spent) / Number(b.budget_limit)) * 100;
-      const alertKey = `${b.id}-${Math.floor(pct / 10)}`;
+      const actualSpent = catSpend[b.category] || 0;
+      const limit = Number(b.budget_limit);
+      if (limit <= 0) return;
 
-      if (pct > 100 && alertKey !== lastAlertRef.current) {
-        lastAlertRef.current = alertKey;
-        const overAmount = Number(b.spent) - Number(b.budget_limit);
+      const pct = (actualSpent / limit) * 100;
+      const alertKey = `${b.id}-${pct > 100 ? "over" : "warn"}`;
+
+      if (pct > 100 && !lastAlertRef.current.has(alertKey)) {
+        lastAlertRef.current.add(alertKey);
+        const overAmount = actualSpent - limit;
 
         toast.error(`${b.emoji} Budget exceeded: ${b.category}`, {
-          description: `You've overspent by ₹${overAmount.toLocaleString("en-IN")} (${Math.round(pct)}% of budget)`,
+          description: `You've overspent by ₹${overAmount.toLocaleString("en-IN")} (${Math.round(pct)}% of ₹${limit.toLocaleString("en-IN")} budget)`,
           duration: 6000,
         });
 
@@ -50,18 +77,26 @@ export function useBudgetAlerts() {
           user_id: user.id,
           type: "budget_alert",
           title: `${b.emoji} ${b.category} budget exceeded!`,
-          message: `You've spent ₹${Number(b.spent).toLocaleString("en-IN")} of your ₹${Number(b.budget_limit).toLocaleString("en-IN")} budget — ₹${overAmount.toLocaleString("en-IN")} over limit.`,
+          message: `You've spent ₹${actualSpent.toLocaleString("en-IN")} of your ₹${limit.toLocaleString("en-IN")} budget — ₹${overAmount.toLocaleString("en-IN")} over limit.`,
           category: b.category,
         }).then(() => qc.invalidateQueries({ queryKey: ["notifications"] }));
-      } else if (pct > 80 && pct <= 100 && alertKey !== lastAlertRef.current) {
-        lastAlertRef.current = alertKey;
+      } else if (pct > 80 && pct <= 100 && !lastAlertRef.current.has(alertKey)) {
+        lastAlertRef.current.add(alertKey);
         toast.warning(`${b.emoji} Approaching ${b.category} limit`, {
-          description: `You've used ${Math.round(pct)}% of your ${b.category} budget`,
+          description: `You've used ${Math.round(pct)}% of your ₹${limit.toLocaleString("en-IN")} ${b.category} budget`,
           duration: 5000,
         });
+
+        supabase.from("notifications").insert({
+          user_id: user.id,
+          type: "budget_warning",
+          title: `${b.emoji} ${b.category} budget at ${Math.round(pct)}%`,
+          message: `You've used ₹${actualSpent.toLocaleString("en-IN")} of your ₹${limit.toLocaleString("en-IN")} ${b.category} budget.`,
+          category: b.category,
+        }).then(() => qc.invalidateQueries({ queryKey: ["notifications"] }));
       }
     });
-  }, [budgets, user, qc]);
+  }, [budgets, monthTransactions, user, qc]);
 
   // Send a motivational message once per session
   useEffect(() => {
@@ -78,7 +113,7 @@ export function useBudgetAlerts() {
         title: msg.title,
         message: msg.message,
       }).then(() => qc.invalidateQueries({ queryKey: ["notifications"] }));
-    }, 8000); // show 8s after login
+    }, 8000);
 
     return () => clearTimeout(timer);
   }, [user, qc]);
