@@ -45,12 +45,21 @@ serve(async (req) => {
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
     }
 
+    // Fetch transactions for the selected period
     const { data: transactions } = await supabase
       .from("transactions")
       .select("*")
       .eq("user_id", user.id)
       .gte("created_at", startDate.toISOString())
       .order("created_at", { ascending: false });
+
+    // Fetch all transactions this month for budget calculation
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+    const { data: monthTransactions } = await supabase
+      .from("transactions")
+      .select("category, amount")
+      .eq("user_id", user.id)
+      .gte("created_at", monthStart.toISOString());
 
     const { data: budgets } = await supabase
       .from("budgets")
@@ -72,6 +81,8 @@ serve(async (req) => {
       Bills: "hsl(100 45% 42%)",
       Entertainment: "hsl(60 50% 45%)",
       Health: "hsl(280 60% 55%)",
+      Clothing: "hsl(320 50% 50%)",
+      Accessories: "hsl(30 60% 50%)",
       General: "hsl(200 50% 50%)",
     };
 
@@ -93,9 +104,15 @@ serve(async (req) => {
 
     const daily = Object.entries(dailyMap).map(([day, amount]) => ({ day, amount }));
 
+    // Compute actual spent from transactions instead of using the static spent column
+    const monthCatSpend: Record<string, number> = {};
+    (monthTransactions || []).forEach((t) => {
+      monthCatSpend[t.category] = (monthCatSpend[t.category] || 0) + Math.abs(Number(t.amount));
+    });
+
     const budgetData = (budgets || []).map((b) => ({
       category: b.category,
-      spent: Number(b.spent),
+      spent: monthCatSpend[b.category] || 0,
       limit: Number(b.budget_limit),
       emoji: b.emoji,
     }));
