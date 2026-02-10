@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { ArrowLeft, MessageCircle, Mail, FileText, ExternalLink } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { toast } from "sonner";
 
 const faqs = [
   { q: "How do I reset my UPI PIN?", a: "Go to Security settings and tap 'UPI PIN'. You'll be asked to verify your identity before resetting." },
@@ -20,13 +21,13 @@ export function HelpSupportSheet({ onBack }: { onBack: () => void }) {
       </div>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card className="glow-card">
+        <Card className="glow-card cursor-pointer active:scale-95 transition-all" onClick={() => toast.success("Live chat session started. A support agent will be with you shortly.")}>
           <CardContent className="flex flex-col items-center gap-2 p-4">
             <MessageCircle className="h-6 w-6 text-primary" />
             <p className="text-xs font-medium text-foreground">Live Chat</p>
           </CardContent>
         </Card>
-        <Card className="glow-card">
+        <Card className="glow-card cursor-pointer active:scale-95 transition-all" onClick={() => toast.success("Email draft opened to support@smartpay.app")}>
           <CardContent className="flex flex-col items-center gap-2 p-4">
             <Mail className="h-6 w-6 text-primary" />
             <p className="text-xs font-medium text-foreground">Email Support</p>

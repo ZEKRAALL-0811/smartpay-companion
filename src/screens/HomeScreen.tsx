@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/contexts/AuthContext";
 import { useAnimatedCounter } from "@/hooks/useAnimatedCounter";
@@ -10,7 +10,9 @@ import { QrCode, ArrowUpRight, ArrowDownLeft, Wallet } from "lucide-react";
 import { RequestMoneyDialog } from "@/components/RequestMoneyDialog";
 import { CheckBalanceDialog } from "@/components/CheckBalanceDialog";
 import { NotificationCenter } from "@/components/NotificationCenter";
+import { QrScanner } from "@/components/QrScanner";
 import { useBudgetAlerts } from "@/hooks/useBudgetAlerts";
+import { toast } from "sonner";
 import type { TabId } from "@/components/BottomNav";
 
 const stagger = {
@@ -33,7 +35,12 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
   const { user } = useAuth();
   const [requestOpen, setRequestOpen] = useState(false);
   const [balanceOpen, setBalanceOpen] = useState(false);
+  const [scannerOpen, setScannerOpen] = useState(false);
   useBudgetAlerts();
+
+  const handleQrScan = useCallback((data: string) => {
+    toast.success("QR scanned: " + data);
+  }, []);
 
   const { data: profile } = useQuery({
     queryKey: ["profile", user?.id],
@@ -68,7 +75,7 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
   const categorySnapshot = Object.entries(catMap).slice(0, 3).map(([label, v]) => ({ label, ...v }));
 
   const quickActions = [
-    { icon: QrCode, label: "Pay", action: () => onNavigate("pay"), color: "gradient-primary" },
+    { icon: QrCode, label: "Scan Pay", action: () => setScannerOpen(true), color: "gradient-primary" },
     { icon: ArrowDownLeft, label: "Request", action: () => setRequestOpen(true), color: "bg-accent" },
     { icon: Wallet, label: "Balance", action: () => setBalanceOpen(true), color: "bg-accent" },
     { icon: ArrowUpRight, label: "History", action: () => onNavigate("insights"), color: "bg-accent" },
@@ -168,6 +175,7 @@ export function HomeScreen({ onNavigate, onOpenProfile }: { onNavigate: (tab: Ta
         </motion.div>
       </motion.div>
 
+      <QrScanner open={scannerOpen} onClose={() => setScannerOpen(false)} onScan={handleQrScan} />
       <RequestMoneyDialog open={requestOpen} onClose={() => setRequestOpen(false)} />
       <CheckBalanceDialog open={balanceOpen} onClose={() => setBalanceOpen(false)} />
     </>
