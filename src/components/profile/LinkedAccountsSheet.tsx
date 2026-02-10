@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 export function LinkedAccountsSheet({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
@@ -72,7 +73,10 @@ export function LinkedAccountsSheet({ onBack }: { onBack: () => void }) {
         </Card>
       )}
 
-      <button className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3.5 text-sm font-medium text-muted-foreground transition-all active:scale-95 hover:border-primary hover:text-primary">
+      <button
+        onClick={() => toast.info("Account linking will be available in the next update.")}
+        className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-border py-3.5 text-sm font-medium text-muted-foreground transition-all active:scale-95 hover:border-primary hover:text-primary"
+      >
         <Plus className="h-4 w-4" />
         Link another account
       </button>

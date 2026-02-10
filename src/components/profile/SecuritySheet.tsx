@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeft, Shield, Fingerprint, KeyRound, Smartphone, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Switch } from "@/components/ui/switch";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export function SecuritySheet({ onBack }: { onBack: () => void }) {
   const { user } = useAuth();
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
 
   const { data: bankAccount } = useQuery({
     queryKey: ["bank-security", user?.id],
@@ -17,11 +21,16 @@ export function SecuritySheet({ onBack }: { onBack: () => void }) {
     enabled: !!user,
   });
 
+  const handleBiometricToggle = (checked: boolean) => {
+    setBiometricEnabled(checked);
+    toast.success(checked ? "Biometric lock enabled" : "Biometric lock disabled");
+  };
+
   const securityItems = [
-    { icon: KeyRound, label: "App PIN", desc: "4-6 digit lock for app access", active: !!bankAccount?.app_pin_hash },
-    { icon: Shield, label: "UPI PIN", desc: "Secure PIN for payments", active: !!bankAccount?.upi_pin_hash },
-    { icon: Smartphone, label: "Device Binding", desc: "Restrict access to this device", active: !!bankAccount?.device_fingerprint },
-    { icon: Fingerprint, label: "Biometric Lock", desc: "Use fingerprint or face ID", active: false },
+    { icon: KeyRound, label: "App PIN", desc: "4-6 digit lock for app access", active: !!bankAccount?.app_pin_hash, type: "status" as const },
+    { icon: Shield, label: "UPI PIN", desc: "Secure PIN for payments", active: !!bankAccount?.upi_pin_hash, type: "status" as const },
+    { icon: Smartphone, label: "Device Binding", desc: "Restrict access to this device", active: !!bankAccount?.device_fingerprint, type: "status" as const },
+    { icon: Fingerprint, label: "Biometric Lock", desc: "Use fingerprint or face ID", active: biometricEnabled, type: "toggle" as const },
   ];
 
   return (
@@ -44,7 +53,9 @@ export function SecuritySheet({ onBack }: { onBack: () => void }) {
                 <p className="text-sm font-medium text-foreground">{item.label}</p>
                 <p className="text-xs text-muted-foreground">{item.desc}</p>
               </div>
-              {item.active ? (
+              {item.type === "toggle" ? (
+                <Switch checked={item.active} onCheckedChange={handleBiometricToggle} />
+              ) : item.active ? (
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10">
                   <Check className="h-3.5 w-3.5 text-primary" />
                 </div>

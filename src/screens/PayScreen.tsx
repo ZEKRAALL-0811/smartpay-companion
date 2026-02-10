@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -27,7 +27,14 @@ const paymentCategories = [
   { emoji: "💊", label: "Health" },
 ];
 
-export function PayScreen() {
+const BHARAT_CONTACT = {
+  name: "Bharat",
+  phone: "8124499897",
+  avatar: "B",
+  color: "hsl(245 58% 51%)",
+};
+
+export function PayScreen({ autoScan }: { autoScan?: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [state, setState] = useState<PayState>("form");
@@ -51,6 +58,31 @@ export function PayScreen() {
     enabled: !!user,
   });
 
+  // Auto-seed Bharat contact if not present
+  useEffect(() => {
+    if (!user || isLoading || !contacts) return;
+    const hasBharat = contacts.some((c) => c.name === BHARAT_CONTACT.name && (c as any).phone === BHARAT_CONTACT.phone);
+    if (!hasBharat) {
+      supabase
+        .from("contacts")
+        .insert({
+          user_id: user.id,
+          name: BHARAT_CONTACT.name,
+          phone: BHARAT_CONTACT.phone,
+          avatar: BHARAT_CONTACT.avatar,
+          color: BHARAT_CONTACT.color,
+        } as any)
+        .then(({ error }) => {
+          if (!error) queryClient.invalidateQueries({ queryKey: ["contacts", user.id] });
+        });
+    }
+  }, [user, contacts, isLoading, queryClient]);
+
+  // Auto-open scanner when navigated with autoScan prop
+  useEffect(() => {
+    if (autoScan) setScannerOpen(true);
+  }, [autoScan]);
+
   const contact = contacts?.find((c) => c.id === selectedContact);
 
   const handlePayClick = () => {
@@ -66,7 +98,6 @@ export function PayScreen() {
     const cat = selectedCategory || "General";
     const payAmount = parseInt(amount);
 
-    // Deduct from virtual balance
     const { data: account } = await supabase
       .from("bank_accounts")
       .select("account_balance")
@@ -92,7 +123,6 @@ export function PayScreen() {
       return;
     }
 
-    // Update balance
     if (account) {
       await supabase
         .from("bank_accounts")
@@ -148,7 +178,7 @@ export function PayScreen() {
                   ))
                 ) : (
                   contacts?.map((c) => (
-                    <button key={c.id} onClick={() => setSelectedContact(c.id)} className="flex flex-col items-center gap-1.5">
+                    <button key={c.id} onClick={() => setSelectedContact(c.id)} className="flex flex-col items-center gap-1.5 min-w-[60px]">
                       <div
                         className={`flex h-12 w-12 items-center justify-center rounded-full text-sm font-bold text-primary-foreground transition-all ${selectedContact === c.id ? "ring-2 ring-primary ring-offset-2 scale-110" : ""}`}
                         style={{ backgroundColor: c.color }}
@@ -156,6 +186,9 @@ export function PayScreen() {
                         {c.avatar}
                       </div>
                       <span className="text-xs text-muted-foreground">{c.name}</span>
+                      {(c as any).phone && (
+                        <span className="text-[10px] text-muted-foreground/60">{(c as any).phone}</span>
+                      )}
                     </button>
                   ))
                 )}
@@ -170,7 +203,6 @@ export function PayScreen() {
               </div>
             </div>
 
-            {/* Mandatory category selection */}
             <div>
               <p className="mb-2 text-sm font-medium text-foreground">
                 Select Category <span className="text-destructive">*</span>
