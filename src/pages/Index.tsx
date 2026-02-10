@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { BottomNav, type TabId } from "@/components/BottomNav";
 import { HomeScreen } from "@/screens/HomeScreen";
@@ -8,9 +8,12 @@ import { CoachScreen } from "@/screens/CoachScreen";
 import { HubScreen } from "@/screens/HubScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
 import { OnboardingScreen } from "@/screens/OnboardingScreen";
+import { AppPinLockScreen } from "@/components/AppPinLockScreen";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
+import { generateDeviceFingerprint } from "@/lib/deviceFingerprint";
+import { toast } from "sonner";
 
 const screens: Record<TabId, React.ComponentType<{ onNavigate: (tab: TabId) => void }>> = {
   home: HomeScreen,
@@ -25,6 +28,8 @@ const Index = () => {
   const [activeTab, setActiveTab] = useState<TabId>("home");
   const [showProfile, setShowProfile] = useState(false);
   const [setupComplete, setSetupComplete] = useState<boolean | null>(null);
+  const [isUnlocked, setIsUnlocked] = useState(false);
+  const [deviceTrusted, setDeviceTrusted] = useState<boolean | null>(null);
 
   // Check if UPI setup is complete
   const { data: bankAccount, isLoading } = useQuery({
@@ -32,7 +37,7 @@ const Index = () => {
     queryFn: async () => {
       const { data } = await supabase
         .from("bank_accounts")
-        .select("is_setup_complete")
+        .select("is_setup_complete, device_fingerprint, app_pin_hash")
         .eq("user_id", user!.id)
         .maybeSingle();
       return data;
@@ -40,9 +45,25 @@ const Index = () => {
     enabled: !!user,
   });
 
-  const isSetupDone = bankAccount?.is_setup_complete === true;
+  // Verify device fingerprint
+  useEffect(() => {
+    if (!bankAccount?.device_fingerprint) {
+      setDeviceTrusted(true); // No fingerprint stored yet, allow
+      return;
+    }
+    generateDeviceFingerprint().then((currentFp) => {
+      const trusted = currentFp === bankAccount.device_fingerprint;
+      setDeviceTrusted(trusted);
+      if (!trusted) {
+        toast.warning("Unrecognized device detected. Extra verification may be required.", { duration: 5000 });
+      }
+    });
+  }, [bankAccount?.device_fingerprint]);
 
-  if (isLoading) {
+  const isSetupDone = bankAccount?.is_setup_complete === true;
+  const hasAppPin = !!bankAccount?.app_pin_hash;
+
+  if (isLoading || deviceTrusted === null) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -55,6 +76,15 @@ const Index = () => {
     return (
       <div className="mx-auto min-h-screen max-w-md bg-background">
         <OnboardingScreen onComplete={() => setSetupComplete(true)} />
+      </div>
+    );
+  }
+
+  // Show app PIN lock screen if PIN is set and not yet unlocked
+  if (hasAppPin && !isUnlocked) {
+    return (
+      <div className="mx-auto min-h-screen max-w-md bg-background">
+        <AppPinLockScreen onUnlocked={() => setIsUnlocked(true)} />
       </div>
     );
   }
