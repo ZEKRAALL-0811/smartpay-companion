@@ -35,12 +35,20 @@ const slideIn = {
 };
 
 export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
-  const [step, setStep] = useState<Step>("phone");
+  const [step, setStepRaw] = useState<Step>(() => {
+    const saved = sessionStorage.getItem("onboarding_step");
+    return (saved as Step) || "phone";
+  });
+  const setStep = (s: Step) => {
+    sessionStorage.setItem("onboarding_step", s);
+    setStepRaw(s);
+  };
   const [loading, setLoading] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(() => sessionStorage.getItem("onboarding_user_id"));
 
   // Phone & OTP
-  const [mobile, setMobile] = useState("");
+  const [mobile, setMobileRaw] = useState(() => sessionStorage.getItem("onboarding_mobile") || "");
+  const setMobile = (val: string) => { sessionStorage.setItem("onboarding_mobile", val); setMobileRaw(val); };
   const [otp, setOtp] = useState("");
   const [generatedOtp, setGeneratedOtp] = useState("");
 
@@ -137,6 +145,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         },
       });
       if (error) throw error;
+      sessionStorage.setItem("onboarding_user_id", data.user?.id || "");
       setUserId(data.user?.id || null);
       toast.success("Account created! Continue setup...");
       setStep("card");
@@ -235,6 +244,10 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
   };
 
   const handleDone = () => {
+    // Clean up onboarding session data
+    sessionStorage.removeItem("onboarding_step");
+    sessionStorage.removeItem("onboarding_mobile");
+    sessionStorage.removeItem("onboarding_user_id");
     // Navigate to home — session is already active from signup
     window.location.href = "/";
   };
