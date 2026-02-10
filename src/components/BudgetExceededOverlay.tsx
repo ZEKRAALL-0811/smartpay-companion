@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
 
@@ -9,17 +9,20 @@ interface BudgetAlert {
   limit: number;
 }
 
+// Track globally so it only fires once per browser session
+const shownThisSession = { value: false };
+
 export function BudgetExceededOverlay({ alerts }: { alerts: BudgetAlert[] }) {
   const [visible, setVisible] = useState(false);
   const [countdown, setCountdown] = useState(5);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const triggered = useRef(false);
 
-  const activeAlerts = alerts.filter(
-    (a) => a.spent > a.limit && !dismissed.has(a.category)
-  );
+  const activeAlerts = alerts.filter((a) => a.spent > a.limit);
 
   useEffect(() => {
-    if (activeAlerts.length > 0) {
+    if (activeAlerts.length > 0 && !shownThisSession.value && !triggered.current) {
+      triggered.current = true;
+      shownThisSession.value = true;
       setVisible(true);
       setCountdown(5);
     }
@@ -29,11 +32,6 @@ export function BudgetExceededOverlay({ alerts }: { alerts: BudgetAlert[] }) {
     if (!visible) return;
     if (countdown <= 0) {
       setVisible(false);
-      setDismissed((prev) => {
-        const next = new Set(prev);
-        activeAlerts.forEach((a) => next.add(a.category));
-        return next;
-      });
       return;
     }
     const timer = setTimeout(() => setCountdown((c) => c - 1), 1000);
