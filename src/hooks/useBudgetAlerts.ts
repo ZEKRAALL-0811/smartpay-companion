@@ -4,19 +4,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 
-const MOTIVATIONAL_MESSAGES = [
-  { title: "Keep it up! 💪", message: "Every rupee tracked is a step toward financial freedom. You're doing great!" },
-  { title: "Smart money move! 🧠", message: "Tracking expenses regularly puts you ahead of 80% of people. Stay consistent!" },
-  { title: "Financial hero! 🦸", message: "Small savings today lead to big achievements tomorrow. Keep tracking!" },
-  { title: "You're on track! 🎯", message: "Consistency is the key to financial success. Check your budgets today!" },
-  { title: "Money wisdom! 💡", message: "A budget tells your money where to go instead of wondering where it went." },
-];
-
 export function useBudgetAlerts() {
   const { user } = useAuth();
   const qc = useQueryClient();
   const lastAlertRef = useRef<Set<string>>(new Set());
-  const motivationalSentRef = useRef(false);
 
   const { data: budgets } = useQuery({
     queryKey: ["budgets-alert", user?.id],
@@ -97,24 +88,5 @@ export function useBudgetAlerts() {
       }
     });
   }, [budgets, monthTransactions, user, qc]);
-
-  // Send a motivational message once per session
-  useEffect(() => {
-    if (!user || motivationalSentRef.current) return;
-    motivationalSentRef.current = true;
-
-    const timer = setTimeout(() => {
-      const msg = MOTIVATIONAL_MESSAGES[Math.floor(Math.random() * MOTIVATIONAL_MESSAGES.length)];
-      toast(msg.title, { description: msg.message, duration: 5000 });
-
-      supabase.from("notifications").insert({
-        user_id: user.id,
-        type: "motivational",
-        title: msg.title,
-        message: msg.message,
-      }).then(() => qc.invalidateQueries({ queryKey: ["notifications"] }));
-    }, 8000);
-
-    return () => clearTimeout(timer);
-  }, [user, qc]);
 }
+
