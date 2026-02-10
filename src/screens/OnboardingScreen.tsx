@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { generateDeviceFingerprint } from "@/lib/deviceFingerprint";
 import {
   Phone,
   Mail,
@@ -196,6 +197,9 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
       const digits = cardNumber.replace(/\s/g, "");
       const upiId = `${mobile}@smartpay`;
 
+      // Generate and store device fingerprint for binding
+      const fingerprint = await generateDeviceFingerprint();
+
       const { error } = await supabase.from("bank_accounts").insert({
         user_id: user.id,
         mobile_number: mobile,
@@ -207,6 +211,7 @@ export function OnboardingScreen({ onComplete }: { onComplete: () => void }) {
         app_pin_hash: btoa(appPin),
         upi_id: upiId,
         is_setup_complete: true,
+        device_fingerprint: fingerprint,
       });
 
       if (error) throw error;

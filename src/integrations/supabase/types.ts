@@ -21,6 +21,7 @@ export type Database = {
           card_expiry: string
           card_number_last4: string
           created_at: string
+          device_fingerprint: string | null
           email: string | null
           id: string
           is_setup_complete: boolean
@@ -38,6 +39,7 @@ export type Database = {
           card_expiry?: string
           card_number_last4?: string
           created_at?: string
+          device_fingerprint?: string | null
           email?: string | null
           id?: string
           is_setup_complete?: boolean
@@ -55,6 +57,7 @@ export type Database = {
           card_expiry?: string
           card_number_last4?: string
           created_at?: string
+          device_fingerprint?: string | null
           email?: string | null
           id?: string
           is_setup_complete?: boolean
