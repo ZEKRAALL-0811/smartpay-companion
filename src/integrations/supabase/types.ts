@@ -17,12 +17,16 @@ export type Database = {
       bank_accounts: {
         Row: {
           account_balance: number
+          app_pin_hash: string | null
           card_expiry: string
           card_number_last4: string
           created_at: string
+          email: string | null
           id: string
           is_setup_complete: boolean
           mobile_number: string
+          otp_code: string | null
+          otp_expires_at: string | null
           updated_at: string
           upi_id: string | null
           upi_pin_hash: string | null
@@ -30,12 +34,16 @@ export type Database = {
         }
         Insert: {
           account_balance?: number
+          app_pin_hash?: string | null
           card_expiry?: string
           card_number_last4?: string
           created_at?: string
+          email?: string | null
           id?: string
           is_setup_complete?: boolean
           mobile_number: string
+          otp_code?: string | null
+          otp_expires_at?: string | null
           updated_at?: string
           upi_id?: string | null
           upi_pin_hash?: string | null
@@ -43,12 +51,16 @@ export type Database = {
         }
         Update: {
           account_balance?: number
+          app_pin_hash?: string | null
           card_expiry?: string
           card_number_last4?: string
           created_at?: string
+          email?: string | null
           id?: string
           is_setup_complete?: boolean
           mobile_number?: string
+          otp_code?: string | null
+          otp_expires_at?: string | null
           updated_at?: string
           upi_id?: string | null
           upi_pin_hash?: string | null
