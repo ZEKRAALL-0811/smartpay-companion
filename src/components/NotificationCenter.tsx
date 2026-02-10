@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Bell, X, AlertTriangle, TrendingUp, Sparkles, Check } from "lucide-react";
+import { Bell, X, AlertTriangle, TrendingUp, Sparkles, Check, Trash2 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -60,6 +60,20 @@ export function NotificationCenter() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
   });
 
+  const deleteNotification = useMutation({
+    mutationFn: async (id: string) => {
+      await supabase.from("notifications").delete().eq("id", id).eq("user_id", user!.id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+
+  const deleteAll = useMutation({
+    mutationFn: async () => {
+      await supabase.from("notifications").delete().eq("user_id", user!.id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["notifications"] }),
+  });
+
   const timeAgo = (date: string) => {
     const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000);
     if (seconds < 60) return "Just now";
@@ -110,6 +124,14 @@ export function NotificationCenter() {
                       <Check className="h-3 w-3" /> Mark all read
                     </button>
                   )}
+                  {notifications.length > 0 && (
+                    <button
+                      onClick={() => deleteAll.mutate()}
+                      className="flex items-center gap-1 text-xs text-destructive hover:underline"
+                    >
+                      <Trash2 className="h-3 w-3" /> Clear all
+                    </button>
+                  )}
                   <button onClick={() => setOpen(false)} className="text-muted-foreground hover:text-foreground">
                     <X className="h-4 w-4" />
                   </button>
@@ -140,6 +162,13 @@ export function NotificationCenter() {
                           <p className="mt-1 text-[10px] text-muted-foreground/60">{timeAgo(n.created_at)}</p>
                         </div>
                         {!n.is_read && <div className="mt-2 h-2 w-2 shrink-0 rounded-full bg-primary" />}
+                        <button
+                          onClick={() => deleteNotification.mutate(n.id)}
+                          className="mt-0.5 shrink-0 rounded-lg p-1.5 text-muted-foreground/40 hover:bg-destructive/10 hover:text-destructive transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     );
                   })
