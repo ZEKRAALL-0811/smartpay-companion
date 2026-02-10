@@ -7,7 +7,7 @@ import { InsightsScreen } from "@/screens/InsightsScreen";
 import { CoachScreen } from "@/screens/CoachScreen";
 import { HubScreen } from "@/screens/HubScreen";
 import { ProfileScreen } from "@/screens/ProfileScreen";
-import { UpiSetupScreen } from "@/screens/UpiSetupScreen";
+import { OnboardingScreen } from "@/screens/OnboardingScreen";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -54,7 +54,7 @@ const Index = () => {
   if (!isSetupDone && setupComplete !== true) {
     return (
       <div className="mx-auto min-h-screen max-w-md bg-background">
-        <UpiSetupScreen onComplete={() => setSetupComplete(true)} />
+        <OnboardingScreen onComplete={() => setSetupComplete(true)} />
       </div>
     );
   }
