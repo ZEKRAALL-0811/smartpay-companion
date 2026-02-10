@@ -17,9 +17,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 }
 
 function AuthRoute({ children }: { children: React.ReactNode }) {
-  const { loading } = useAuth();
+  const { session, loading } = useAuth();
   if (loading) return null;
-  // Don't redirect to / even if session exists — let AuthPage handle signup flow
+  if (session) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 
