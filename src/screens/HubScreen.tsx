@@ -40,7 +40,7 @@ export function HubScreen() {
   const [bookmarks, setBookmarks] = useState<Set<number>>(new Set());
   const [detailView, setDetailView] = useState<DetailView>(null);
 
-  const { data: liveNews, isLoading: newsLoading, refetch } = useQuery({
+  const { data: liveNews, isLoading: newsLoading, isFetching, refetch } = useQuery({
     queryKey: ["finance-news"],
     queryFn: async () => {
       const resp = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/finance-news`, {
@@ -53,8 +53,7 @@ export function HubScreen() {
       const data = await resp.json();
       return (data.articles || []) as NewsArticle[];
     },
-    staleTime: 5 * 60 * 1000,
-    refetchInterval: 10 * 60 * 1000,
+    staleTime: 0,
   });
 
   const staticFiltered = filter === "All" ? articles : articles.filter((a) => a.category === filter);
@@ -114,9 +113,9 @@ export function HubScreen() {
     <motion.div className="space-y-5 px-4 pb-24 pt-6" variants={stagger} initial="hidden" animate="show">
       <motion.div variants={fadeUp} className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-foreground">Finance Hub 📰</h1>
-        <button onClick={() => refetch()} className="flex items-center gap-1 text-xs text-primary font-medium">
-          <RefreshCw className={`h-3 w-3 ${newsLoading ? "animate-spin" : ""}`} />
-          Refresh
+        <button onClick={() => refetch()} disabled={isFetching} className="flex items-center gap-1 text-xs text-primary font-medium disabled:opacity-50">
+          <RefreshCw className={`h-3 w-3 ${isFetching ? "animate-spin" : ""}`} />
+          {isFetching ? "Refreshing..." : "Refresh"}
         </button>
       </motion.div>
 
